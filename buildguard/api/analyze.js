@@ -1,16 +1,7 @@
-import formidable from "formidable";
-
-export default function handler(req, res) {
-  const form = formidable();
-
-  form.parse(req, function (err, fields, files) {
-    if (err) {
-      return res.status(500).json({ error: "Failed to parse file" });
-    }
-
-    console.log(files); // see what came through
-    res
-      .status(200)
-      .json({ status: "ok", filename: files.file[0].originalFilename });
-  });
+export default async function handler(req, res) {
+  const modalResponse = await fetch(
+    "https://kyuruki--billguard-health.modal.run",
+  );
+  const data = await modalResponse.json();
+  res.status(200).json(data);
 }
