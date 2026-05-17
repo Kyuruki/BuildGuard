@@ -9,9 +9,10 @@ export default async function handler(req, res) {
     }
     const filepath = files.file[0].filepath;
     const filebytes = fs.readFileSync(filepath);
+    const blob = new Blob([filebytes]);
     const filename = files.file[0].originalFilename;
     const modalform = new FormData();
-    modalform.append("bill", filebytes, filename);
+    modalform.append("bill", blob, filename);
     const modalResponse = await fetch(
       "https://kyuruki--billguard-analyze.modal.run",
       {
