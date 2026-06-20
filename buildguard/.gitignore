@@ -25,3 +25,18 @@ dist-ssr
 
 .vercel
 .env*.local
+
+# Secrets
+.env
+
+# Large/licensed CMS data files
+PFALL26AR.txt
+PUF_CLFS_CY2026_Q2V1.*
+
+# Test files
+letter_test.json
+test_medical_bill.*
+
+# Python
+__pycache__/
+*.pyc
