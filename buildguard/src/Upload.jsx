@@ -24,16 +24,19 @@ export default function Upload() {
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("bill", file);
       const response = await fetch("/api/analyze", {
         method: "POST",
         body: formData,
       });
-      if (!response.ok) throw new Error("Analyze request failed");
+      if (!response.ok) {
+        const detail = await response.json().catch(() => null);
+        throw new Error(detail?.detail || "Analyze request failed");
+      }
       const data = await response.json();
       setResult(data);
     } catch (err) {
-      setAnalyzeError("Something went wrong analyzing this bill. Try again.");
+      setAnalyzeError(err.message || "Something went wrong analyzing this bill. Try again.");
     } finally {
       setAnalyzing(false);
     }
@@ -71,7 +74,10 @@ export default function Upload() {
           provider_name: providerName || null,
         }),
       });
-      if (!response.ok) throw new Error("Letter generation failed");
+      if (!response.ok) {
+        const detail = await response.json().catch(() => null);
+        throw new Error(detail?.detail || "Letter generation failed");
+      }
       const data = await response.json();
       if (data.letter) {
         setLetter(data.letter);
@@ -79,7 +85,7 @@ export default function Upload() {
         setLetterError(data.message || "No letter was generated.");
       }
     } catch (err) {
-      setLetterError("Something went wrong generating the letter. Try again.");
+      setLetterError(err.message || "Something went wrong generating the letter. Try again.");
     } finally {
       setLetterLoading(false);
     }

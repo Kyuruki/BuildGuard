@@ -1,20 +1,26 @@
 import modal
 import re
 import os
-from fastapi import File, UploadFile
+import asyncio
+from fastapi import File, UploadFile, HTTPException
 from io import BytesIO
 from PIL import Image
 import pytesseract
+from typing import List, Optional
+from pydantic import BaseModel
 
 image = (
     modal.Image.debian_slim()
-    .pip_install("fastapi[standard]", "pytesseract", "Pillow", "psycopg2-binary", "anthropic")
-    .apt_install("tesseract-ocr")
+    .pip_install("fastapi[standard]", "pytesseract", "Pillow", "psycopg2-binary", "anthropic", "pdf2image")
+    .apt_install("tesseract-ocr", "poppler-utils")
 )
 
 app = modal.App("billguard", image=image)
 
-# --- Stage 1 extraction patterns ---
+MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # 20 MB
+MAX_PDF_PAGES = 30
+
+# --- Stage 1 extraction patterns (no AI) ---
 CODE_PATTERN = re.compile(r'\b(\d{5})\b')
 MONEY_PATTERN = re.compile(r'\$?\s?(\d{1,3}(?:,\d{3})*\.\d{2})')
 
@@ -60,45 +66,57 @@ def enrich_with_fee_schedule(line_items):
     Laboratory Fee Schedule -- lab tests, venipuncture) if not found there.
     Acts as a validity check too -- if a code isn't in either table, it's
     flagged as unverified rather than silently trusted.
+    Uses batched queries to avoid N+1 round-trips.
     """
     import psycopg2
+
+    if not line_items:
+        return []
 
     database_url = os.environ["DATABASE_URL"]
     conn = psycopg2.connect(database_url)
     cur = conn.cursor()
 
+    codes = [item["code"] for item in line_items]
+
+    cur.execute(
+        "SELECT hcpcs_code, non_facility_rate FROM fee_schedule WHERE hcpcs_code = ANY(%s)",
+        (codes,)
+    )
+    physician_rates = {row[0]: float(row[1]) for row in cur.fetchall()}
+
+    remaining_codes = [c for c in codes if c not in physician_rates]
+    clfs_rates = {}
+    if remaining_codes:
+        cur.execute(
+            "SELECT hcpcs_code, payment_rate FROM clfs_fee_schedule WHERE hcpcs_code = ANY(%s)",
+            (remaining_codes,)
+        )
+        clfs_rates = {row[0]: float(row[1]) for row in cur.fetchall()}
+
+    cur.close()
+    conn.close()
+
     enriched = []
     for item in line_items:
-        cur.execute(
-            "SELECT non_facility_rate, facility_rate FROM fee_schedule WHERE hcpcs_code = %s",
-            (item["code"],)
-        )
-        row = cur.fetchone()
+        code = item["code"]
 
-        if row is not None:
-            non_facility_rate, facility_rate = row
-            medicare_rate = float(non_facility_rate)
+        if code in physician_rates:
+            medicare_rate = physician_rates[code]
             source = "physician_fee_schedule"
+        elif code in clfs_rates:
+            medicare_rate = clfs_rates[code]
+            source = "clinical_lab_fee_schedule"
         else:
-            cur.execute(
-                "SELECT payment_rate FROM clfs_fee_schedule WHERE hcpcs_code = %s",
-                (item["code"],)
-            )
-            clfs_row = cur.fetchone()
-
-            if clfs_row is not None:
-                medicare_rate = float(clfs_row[0])
-                source = "clinical_lab_fee_schedule"
-            else:
-                enriched.append({
-                    **item,
-                    "found_in_fee_schedule": False,
-                    "rate_source": None,
-                    "medicare_rate": None,
-                    "overcharge_amount": None,
-                    "overcharge_multiple": None
-                })
-                continue
+            enriched.append({
+                **item,
+                "found_in_fee_schedule": False,
+                "rate_source": None,
+                "medicare_rate": None,
+                "overcharge_amount": None,
+                "overcharge_multiple": None
+            })
+            continue
 
         overcharge_amount = round(item["charged"] - medicare_rate, 2)
         overcharge_multiple = round(item["charged"] / medicare_rate, 2) if medicare_rate > 0 else None
@@ -112,14 +130,7 @@ def enrich_with_fee_schedule(line_items):
             "overcharge_multiple": overcharge_multiple
         })
 
-    cur.close()
-    conn.close()
     return enriched
-
-
-from fastapi import Body
-from typing import List, Optional
-from pydantic import BaseModel
 
 
 class LineItemIn(BaseModel):
@@ -141,7 +152,7 @@ class GenerateLetterRequest(BaseModel):
     statement_date: Optional[str] = None
 
 
-def build_dispute_letter_prompt(req: GenerateLetterRequest) -> str:
+def build_dispute_letter_prompt(req: GenerateLetterRequest) -> Optional[str]:
     # Only argue the items that are actually verified and overcharged --
     # never assert an overcharge for a code we couldn't confirm in CMS data.
     overcharged = [
@@ -155,10 +166,11 @@ def build_dispute_letter_prompt(req: GenerateLetterRequest) -> str:
     lines = []
     for li in overcharged:
         source_label = "CMS Physician Fee Schedule" if li.rate_source == "physician_fee_schedule" else "CMS Clinical Laboratory Fee Schedule"
+        multiple_str = f"{li.overcharge_multiple:.2f}x reference rate" if li.overcharge_multiple is not None else "unknown multiple"
         lines.append(
             f"- CPT/HCPCS {li.code}: billed ${li.charged:.2f}, "
             f"Medicare reference rate ${li.medicare_rate:.2f} ({source_label}), "
-            f"overcharge ${li.overcharge_amount:.2f} ({li.overcharge_multiple:.2f}x reference rate)"
+            f"overcharge ${li.overcharge_amount:.2f} ({multiple_str})"
         )
     line_items_block = "\n".join(lines)
 
@@ -222,12 +234,32 @@ def health():
 @modal.fastapi_endpoint(method="POST")
 async def analyze(bill: UploadFile = File(...)):
     contents = await bill.read()
-    image_data = BytesIO(contents)
-    img = Image.open(image_data)
-    text = pytesseract.image_to_string(img)
+
+    if len(contents) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail=f"File too large. Maximum size is {MAX_UPLOAD_BYTES // (1024 * 1024)} MB.")
+
+    is_pdf = (
+        (bill.content_type == "application/pdf")
+        or (bill.filename and bill.filename.lower().endswith(".pdf"))
+    )
+
+    if is_pdf:
+        from pdf2image import convert_from_bytes
+        pages = convert_from_bytes(contents)
+        if len(pages) > MAX_PDF_PAGES:
+            raise HTTPException(status_code=400, detail=f"PDF has too many pages. Maximum is {MAX_PDF_PAGES}.")
+        text_parts = []
+        for i, page_img in enumerate(pages):
+            page_text = pytesseract.image_to_string(page_img)
+            text_parts.append(f"--- Page {i + 1} ---\n{page_text}")
+        text = "\n".join(text_parts)
+    else:
+        image_data = BytesIO(contents)
+        img = Image.open(image_data)
+        text = pytesseract.image_to_string(img)
 
     line_items = extract_line_items(text)
-    enriched_items = enrich_with_fee_schedule(line_items)
+    enriched_items = await asyncio.to_thread(enrich_with_fee_schedule, line_items)
 
     return {
         "status": "ok",
