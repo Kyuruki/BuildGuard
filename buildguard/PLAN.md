@@ -56,22 +56,28 @@ blue+white design; process uploads in memory only, persist no PHI.
       per-instance limiter; weakness (per-instance, resets on cold start, N× across
       instances) documented in the module + CLAUDE.md. Upgrade path noted.
 - [x] Behavioral test: 10 allowed / 3 denied per minute, per-IP + per-bucket isolation.
-- [ ] **CHECKPOINT** ✅ Phase 2 — pending user go-ahead to Phase 3 (frontend rebuild).
+- [x] **CHECKPOINT** ✅ Phase 2.
 
 ## Phase 3 — Frontend rebuild (full site, accessible)
-- [ ] Use the frontend/web-design skill to drive visual quality.
-- [ ] Client-side routing: Home, How It Works, FAQ, Privacy, About, Analyzer.
-- [ ] Reuse the working analyze → results → generate-letter flow with new UI.
-- [ ] Design: clean/clinical, blues + whites, high-contrast, mobile-first responsive;
-      consistent components; real loading/empty/error states.
-- [ ] **WCAG 2.1 AA** built-in: semantic landmarks, correct heading order, full
-      keyboard operability of upload/results/letter, visible focus, form labels +
-      `aria-live` error announcements, verified color contrast, alt text,
-      `prefers-reduced-motion`. Upload + results table fully screen-reader usable.
-- [ ] Clear disclaimers on the tool + footer/Privacy (informational only; not legal/
-      medical/financial advice; not affiliated with CMS/Medicare/insurers; verify
-      before acting). Privacy page: uploads processed transiently, not stored.
-- [ ] **CHECKPOINT** ✅ Phase 3.
+- [x] Used the frontend-design skill for direction: an "auditor's ledger" thesis —
+      ink-navy on paper-white, one medical blue, red only for overcharges; IBM Plex
+      Sans + Mono; the billed-vs-Medicare reconciliation row/table as the signature.
+- [x] Client-side routing (React Router v7): Home, How It Works, FAQ, Privacy, About,
+      Analyzer + 404. Route-level code splitting; SPA rewrite in vercel.json.
+- [x] Reused the working analyze → results → generate-letter flow (unchanged proxy
+      contract) in the new UI.
+- [x] Design: clean/clinical blues+whites, high-contrast (all AA verified), mobile-first;
+      shared components (Container/Button/Eyebrow/Callout); real loading/empty/error states.
+- [x] **WCAG 2.1 AA**: landmarks, heading order, full keyboard operability (upload dropzone
+      focus ring, results table, letter), visible focus, labelled fields, `aria-live`
+      status+error announcements, route-change focus/announce (guarded on mount),
+      color-not-alone status badges, `prefers-reduced-motion`, scrollable-table region.
+- [x] Disclaimers on the tool + footer + Privacy page (informational only; not advice;
+      not affiliated with CMS/Medicare/insurers; uploads processed transiently, not stored).
+- [x] Built + linted clean; screenshotted every route (desktop+mobile) via headless
+      Chromium; adversarial review workflow run — all 8 verified findings fixed
+      (incl. hero-total reconciliation bug, dropzone focus ring, initial-load focus).
+- [ ] **CHECKPOINT** ✅ Phase 3 — pending user go-ahead to Phase 4 (SEO + AI-crawler).
 
 ## Phase 4 — SEO + AI-crawler readiness
 - [ ] Per-page title + meta description, canonical URLs, Open Graph + Twitter Card,

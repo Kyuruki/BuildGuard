@@ -30,12 +30,14 @@ buildguard/
   eslint.config.js      ESLint flat config
   package.json          Frontend + proxy deps (react 19, formidable)
   src/
-    main.jsx            React root
-    App.jsx             Currently just renders <Upload/> (no router yet)
-    Upload.jsx          The entire analyze -> results -> letter UI flow
-    Upload.css          Component styles
-    index.css           Global styles / CSS variables (currently PURPLE theme)
-    assets/             hero.png, logos
+    main.jsx            React root + BrowserRouter + self-hosted font imports
+    App.jsx             Layout (Header/Footer/skip link) + Routes; route-change focus/title/announce
+    index.css           Tailwind v4 @theme tokens (clinical blue palette), base, focus, reduced-motion
+    content.js          Copy/data source of truth (nav, FAQ, steps, disclaimer, route titles)
+    components/         ui.jsx (Container/Button/Eyebrow/Callout), Header, Footer, BrandMark,
+                        LedgerDemo (hero signature), analyzer/{UploadPanel,ResultsTable,LetterPanel}
+    pages/              Home, HowItWorks, Faq, Privacy, About, Analyzer, NotFound (lazy-loaded)
+    assets/             hero.png
   api/                  Vercel Serverless Functions (the "proxy")
     analyze.js          POST: buffers upload in memory, forwards to Modal /analyze
     generate-letter.js  POST: validates + whitelists JSON, forwards to Modal /generate_letter
@@ -245,13 +247,18 @@ Loaders — **already ran; do not re-run** (they `TRUNCATE`). Kept for provenanc
   reference it, so `modal deploy` fails if it's missing. Create it once (see secrets).
 - **`analyze.js` sets `bodyParser: false`** so formidable can read the raw stream and
   buffer it in memory. `generate-letter.js` relies on Vercel's default JSON body parse.
-- **Theme is currently purple**, not the clinical blue spec — the whole frontend is
-  being rebuilt in Phase 3.
-- **Tailwind is NOT yet installed** despite the intended stack — will be added in
-  Phase 3.
+- **Frontend stack (Phase 3):** React Router v7 (client routing, lazy route chunks),
+  Tailwind v4 via `@tailwindcss/vite` (tokens in `src/index.css` `@theme`, no
+  `tailwind.config.js`), IBM Plex Sans/Mono self-hosted via `@fontsource`. SPA deep
+  links work via the `rewrites` rule in `vercel.json` (excludes `/api/`).
+- **Tailwind v4 gotcha:** `transition-colors` includes `outline-color`, which made the
+  upload dropzone's keyboard focus ring *fade in* (read as mid-transition). The ring is
+  an unlayered rule in `index.css` (`input[type=file]:focus-visible + label`), and the
+  label scopes its transition to `color,background-color,border-color` so the ring is
+  instant. Keep both if touching UploadPanel.
 
   *(Resolved in Phase 1: PDF page cap now checked before rasterization; upload no
-  longer written to disk — buffered in memory.)*
+  longer written to disk — buffered in memory. Phase 3: clinical blue theme shipped.)*
 
 ## Working docs
 
