@@ -48,7 +48,9 @@ buildguard/
   backend.py            Modal app "billguard": analyze, generate_letter, health
   load_fees.py          ONE-TIME loader for fee_schedule (already ran — DO NOT re-run)
   load_clfs.py          ONE-TIME loader for clfs_fee_schedule (already ran — DO NOT re-run)
-  public/               favicon.svg, icons.svg
+  public/               Static, served at root: favicon.svg + favicon-32/apple-touch/
+                        icon-192/icon-512 PNGs, site.webmanifest, og.png (1200×630),
+                        robots.txt, sitemap.xml, llms.txt
 ```
 
 ## Architecture / data flow
@@ -259,6 +261,21 @@ Loaders — **already ran; do not re-run** (they `TRUNCATE`). Kept for provenanc
 
   *(Resolved in Phase 1: PDF page cap now checked before rasterization; upload no
   longer written to disk — buffered in memory. Phase 3: clinical blue theme shipped.)*
+
+## SEO / AI-crawler (Phase 4)
+
+- **Per-route metadata** is React 19 native: `src/components/Seo.jsx` renders
+  `<title>`, `<meta name=description>`, `<link rel=canonical>`, and OG/Twitter tags from
+  `PAGE_META` (in `content.js`), driven by the current route. One `<Seo/>` lives in the
+  layout. index.html deliberately carries NO description/OG (only a fallback `<title>`)
+  so React owns them without duplicate tags.
+- **JSON-LD:** Organization + WebApplication are static in `index.html` (crawler-safe,
+  no JS needed); FAQPage is rendered on `/faq` from the FAQ data.
+- **Static files** in `public/`: `robots.txt` (+ sitemap ref), `sitemap.xml` (update
+  `lastmod` on content changes), `llms.txt`, `og.png`, icons, `site.webmanifest`.
+- **Regenerating icons/OG:** they were rendered from inline SVG/HTML via headless
+  Chromium (see session scratchpad `pwtest/assets.mjs` + `og.mjs`) — re-render if the
+  mark or tagline changes. The canonical domain is `https://billguard.kyuruki.cc`.
 
 ## Working docs
 

@@ -77,16 +77,22 @@ blue+white design; process uploads in memory only, persist no PHI.
 - [x] Built + linted clean; screenshotted every route (desktop+mobile) via headless
       Chromium; adversarial review workflow run — all 8 verified findings fixed
       (incl. hero-total reconciliation bug, dropzone focus ring, initial-load focus).
-- [ ] **CHECKPOINT** ✅ Phase 3 — pending user go-ahead to Phase 4 (SEO + AI-crawler).
+- [x] **CHECKPOINT** ✅ Phase 3.
 
 ## Phase 4 — SEO + AI-crawler readiness
-- [ ] Per-page title + meta description, canonical URLs, Open Graph + Twitter Card,
-      social share image.
-- [ ] JSON-LD: Organization + WebApplication site-wide; FAQPage on FAQ.
-- [ ] `sitemap.xml`, `robots.txt`, `llms.txt`. Favicon + app icons + manifest.
-- [ ] Core Web Vitals: route-level code splitting, lazy-load non-critical assets,
-      optimize/compress images, avoid layout shift.
-- [ ] **CHECKPOINT** ✅ Phase 4.
+- [x] Per-page title + meta description + canonical + Open Graph + Twitter Card via a
+      single `<Seo>` (React 19 native metadata, driven by route → `PAGE_META`). Verified
+      exactly one description tag per route (no duplication). Branded 1200×630 `og.png`.
+- [x] JSON-LD: Organization + WebApplication static in `index.html` (crawler-safe);
+      FAQPage rendered on `/faq`. All validated as parseable.
+- [x] `sitemap.xml`, `robots.txt` (sitemap ref + AI crawlers welcome), `llms.txt`
+      (site description for AI crawlers). Branded `favicon.svg` + `favicon-32.png` +
+      `apple-touch-icon.png` + `icon-192/512.png` + `site.webmanifest`.
+- [x] Core Web Vitals: route-level code splitting (Phase 3), self-hosted fonts with
+      `font-display: swap`, no render-blocking images / no layout shift. (Full Lighthouse
+      pass → Phase 5.)
+- [x] Verified via headless Chromium: rendered head tags per route + all static files 200.
+- [ ] **CHECKPOINT** ✅ Phase 4 — pending user go-ahead to Phase 5 (verify, docs, deploy).
 
 ## Phase 5 — Verify, document, deploy
 - [ ] Verify: security headers present; CORS locked; rate limits return 429; no
