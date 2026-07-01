@@ -110,9 +110,14 @@ blue+white design; process uploads in memory only, persist no PHI.
       404 → noindex + home canonical, rate-limiter prefers x-real-ip, CLAUDE.md raw-bytes doc.
       (Rate-limiter XFF-spoof + UserUnit findings verified as non-issues — Vercel controls XFF;
       PyMuPDF page.rect already includes /UserUnit.)
-- [ ] Deploy to Modal + Vercel — **STOP-AND-ASK**: needs the `proxy-auth` Modal secret +
-      Vercel `PROXY_SHARED_SECRET` first; deploying is the outward action to confirm.
-- [ ] **CHECKPOINT** ✅ Phase 5.
+- [x] **Deployed to Modal + Vercel (2026-07-01).** `proxy-auth` Modal secret + Vercel
+      `PROXY_SHARED_SECRET` provisioned; backend deployed from WSL (needed the `WSLENV`
+      UTF-8 fix to avoid a charmap crash — see CLAUDE.md); frontend shipped via PR #1 merge.
+      **Live-verified** on Vercel: all security headers present; direct-Modal + cross-origin
+      → 403; full analyze → results (real CMS rates, no PHI) → generate-letter flow; rate
+      limit 429 + Retry-After. Remaining (manual, non-code): attach custom domain
+      `billguard.kyuruki.cc` in Vercel + Cloudflare DNS.
+- [x] **CHECKPOINT** ✅ Phase 5 — hardening + rebuild complete and live.
 
 ---
 
