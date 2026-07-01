@@ -166,9 +166,18 @@ Loaders — **already ran; do not re-run** (they `TRUNCATE`). Kept for provenanc
 
 ## Known gotchas
 
-- **Windows Modal CLI path:** on the local Windows dev box the `modal` CLI has
-  needed its **full path** to invoke. TODO: record the exact working invocation
-  here once confirmed (e.g. `%LOCALAPPDATA%\Programs\Python\PythonXX\Scripts\modal.exe ...`).
+- **Windows Modal CLI path:** `modal` (v1.4.2) is installed into **Python 3.14
+  (64-bit)** under the Python install-manager layout, which is NOT on PATH — hence
+  the full path is required on the Windows dev box. Working invocations:
+  ```
+  C:\Users\karol\AppData\Local\Python\pythoncore-3.14-64\Scripts\modal.exe deploy backend.py
+  ```
+  or (module form, equally stable):
+  ```
+  C:\Users\karol\AppData\Local\Python\pythoncore-3.14-64\python.exe -m modal deploy backend.py
+  ```
+  (`%LOCALAPPDATA%` == `C:\Users\karol\AppData\Local`.) Swap `deploy` for `serve`/`run`
+  as needed.
 - **Field-name mismatch is load-bearing:** browser sends `file`; the proxy renames
   it to `bill` for Modal. Changing either side breaks upload (this bit us before —
   see commits "fixed form field name").
