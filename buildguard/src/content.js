@@ -16,14 +16,42 @@ export const NAV = [
   { to: "/about", label: "About" },
 ];
 
-export const ROUTE_TITLES = {
-  "/": "BillGuard — Check your medical bill against Medicare rates",
-  "/analyze": "Analyze a bill — BillGuard",
-  "/how-it-works": "How it works — BillGuard",
-  "/faq": "FAQ — BillGuard",
-  "/privacy": "Privacy — BillGuard",
-  "/about": "About — BillGuard",
+// Per-route title + meta description (used for <title>, <meta>, OG/Twitter, and the
+// screen-reader route announcement). Keep titles ≤ ~60 chars, descriptions ≤ ~160.
+export const PAGE_META = {
+  "/": {
+    title: "BillGuard — Check your medical bill against Medicare rates",
+    description:
+      "Upload a medical or dental bill and check its charges against official CMS Medicare reference rates. See likely overcharges and draft a dispute letter — free, anonymous, nothing stored.",
+  },
+  "/analyze": {
+    title: "Analyze a bill — BillGuard",
+    description:
+      "Upload a bill to check every code against CMS Medicare reference rates, see likely overcharges, and generate a dispute letter. Processed in memory, never stored.",
+  },
+  "/how-it-works": {
+    title: "How it works — BillGuard",
+    description:
+      "How BillGuard reads your bill: OCR extracts the codes and charges, then compares each to two official CMS fee schedules — no AI guessing at your numbers.",
+  },
+  "/faq": {
+    title: "FAQ — BillGuard",
+    description:
+      "Answers about how BillGuard flags overcharges, what CMS Medicare reference rates mean, how your bill is handled, and whether it's affiliated with Medicare.",
+  },
+  "/privacy": {
+    title: "Privacy — BillGuard",
+    description:
+      "How BillGuard handles your bill: processed in memory and discarded, with no accounts and nothing stored. Health-adjacent data is kept to a minimum.",
+  },
+  "/about": {
+    title: "About — BillGuard",
+    description:
+      "Why BillGuard exists — an independent, transparent tool that checks medical bills against public CMS Medicare rates so you can question charges with confidence.",
+  },
 };
+
+export const DEFAULT_META = PAGE_META["/"];
 
 // The disclaimer, worn openly. Used in the footer, the tool, and Privacy.
 export const DISCLAIMER =

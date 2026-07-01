@@ -1,9 +1,20 @@
 import { Container, Eyebrow, Button } from "../components/ui.jsx";
 import { FAQ } from "../content.js";
 
+const FAQ_JSONLD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: { "@type": "Answer", text: item.a },
+  })),
+});
+
 export default function Faq() {
   return (
     <Container as="article" className="py-12 sm:py-16">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: FAQ_JSONLD }} />
       <div className="max-w-2xl">
         <Eyebrow>FAQ</Eyebrow>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">Questions, answered plainly</h1>

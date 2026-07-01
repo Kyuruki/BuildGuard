@@ -2,14 +2,36 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#1257bf" />
-    <meta
-      name="description"
-      content="Upload a medical or dental bill and check its charges against official CMS Medicare reference rates. See likely overcharges and draft a dispute letter. Free, anonymous, nothing stored."
-    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <title>BillGuard — Check your medical bill against Medicare rates</title>
+    <script type="application/ld+json">
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "BillGuard",
+          "url": "https://billguard.kyuruki.cc",
+          "logo": "https://billguard.kyuruki.cc/icon-512.png",
+          "description": "An independent, informational tool that checks medical bills against CMS Medicare reference rates."
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          "name": "BillGuard",
+          "url": "https://billguard.kyuruki.cc",
+          "applicationCategory": "HealthApplication",
+          "operatingSystem": "Web",
+          "browserRequirements": "Requires JavaScript",
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+          "description": "Upload a medical or dental bill and check its charges against official CMS Medicare reference rates, then generate a dispute letter. Anonymous; nothing is stored."
+        }
+      ]
+    </script>
   </head>
   <body>
     <div id="root"></div>
