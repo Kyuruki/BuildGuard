@@ -1,6 +1,6 @@
 # BillGuard
 
-> A second opinion on your medical bill — check its charges against official CMS Medicare reference rates and draft a dispute letter.
+> A second opinion on your medical bill. Check its charges against official CMS Medicare reference rates and draft a dispute letter.
 
 BillGuard is an anonymous, informational web tool. A user uploads a medical or dental
 bill (image or PDF); it reads the billing codes and charges with OCR, compares each code
@@ -19,7 +19,7 @@ overcharges.
 - [Analyze a bill](https://billguard.kyuruki.cc/analyze): the tool itself.
 
 ## Important context
-- Informational only — not legal, medical, or financial advice.
+- Informational only; not legal, medical, or financial advice.
 - Not affiliated with, endorsed by, or connected to CMS, Medicare, or any insurer.
 - Medicare reference rates are a benchmark, not a statement of what a patient owes; a
   charge above the reference rate can be legitimate and is a prompt to request an

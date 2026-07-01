@@ -1,8 +1,8 @@
 // Best-effort in-memory IP rate limiter for the Vercel proxy.
 //
-// LIMITATION (by design — no external store): counters live in a single serverless
+// LIMITATION (by design, no external store): counters live in a single serverless
 // instance's memory. Vercel runs many instances and recycles them, so limits are
-// approximate — a client spread across N warm instances effectively gets N× the
+// approximate: a client spread across N warm instances effectively gets N times the
 // limit, and counters reset on cold starts. This raises the cost of casual abuse
 // but is not a hard guarantee. The Modal backend adds a second coarse per-container
 // cap as defense-in-depth, and the shared secret blocks direct Modal access. Swap

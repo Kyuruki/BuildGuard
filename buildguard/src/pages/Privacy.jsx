@@ -47,7 +47,7 @@ export default function Privacy() {
 
         <Callout tone="warn" title="Informational only" className="mt-10">
           BillGuard is not legal, medical, or financial advice, and is not affiliated with CMS, Medicare, or any insurer.
-          Medicare reference rates are a benchmark, not a statement of what you owe — verify against your own bill and
+          Medicare reference rates are a benchmark, not a statement of what you owe. Verify against your own bill and
           plan before acting.
         </Callout>
       </div>

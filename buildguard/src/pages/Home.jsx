@@ -5,7 +5,7 @@ import { STEPS } from "../content.js";
 export default function Home() {
   return (
     <>
-      {/* Hero — the thesis: billed vs. Medicare reference, reconciled. */}
+      {/* Hero: billed vs. Medicare reference, reconciled. */}
       <section aria-labelledby="hero-heading" className="border-b border-line">
         <Container className="grid items-center gap-12 py-16 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           <div>
@@ -16,7 +16,7 @@ export default function Home() {
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
               Upload a bill and BillGuard checks every billing code against official CMS Medicare reference rates. It
-              flags what's charged above the benchmark — then drafts a dispute letter you can send.
+              flags what's charged above the benchmark, then drafts a dispute letter you can send.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Button to="/analyze" size="lg">Analyze a bill</Button>
@@ -33,7 +33,7 @@ export default function Home() {
         </Container>
       </section>
 
-      {/* Process — a real ordered sequence, so numbered markers earn their place. */}
+      {/* Process: the four steps, in order. */}
       <section aria-labelledby="process-heading">
         <Container className="py-16 sm:py-20">
           <Eyebrow>How it works</Eyebrow>
@@ -53,7 +53,7 @@ export default function Home() {
         </Container>
       </section>
 
-      {/* Why the benchmark matters — the trust argument. */}
+      {/* Why the benchmark matters. */}
       <section aria-labelledby="why-heading" className="border-y border-line bg-paper-2">
         <Container className="grid gap-10 py-16 sm:py-20 lg:grid-cols-2 lg:gap-16">
           <div>
@@ -65,11 +65,11 @@ export default function Home() {
           <div className="space-y-4 text-ink-soft">
             <p className="leading-relaxed">
               CMS publishes standardized rates for medical procedures. They're a widely used reference for what care
-              actually costs — which makes them a fair yardstick for a charge with no context.
+              actually costs, which makes them a fair yardstick for a charge with no context.
             </p>
             <p className="leading-relaxed">
               BillGuard only flags codes it can confirm in the CMS data, and never calls a charge an overcharge it
-              can't verify. A flag isn't an accusation — it's a reason to ask for an itemized justification.
+              can't verify. A flag isn't an accusation. It's a reason to ask for an itemized justification.
             </p>
             <p>
               <Button to="/faq" variant="ghost" className="-ml-2">Read the FAQ →</Button>

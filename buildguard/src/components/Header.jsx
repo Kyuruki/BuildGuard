@@ -16,8 +16,8 @@ export default function Header() {
   const location = useLocation();
 
   // Close the mobile menu whenever the route changes (covers link clicks AND
-  // browser back/forward) — the recommended "adjust state during render" pattern,
-  // no effect needed.
+  // browser back/forward) using the recommended "adjust state during render"
+  // pattern, no effect needed.
   const [prevPath, setPrevPath] = useState(location.pathname);
   if (location.pathname !== prevPath) {
     setPrevPath(location.pathname);

@@ -16,7 +16,7 @@ export default function Footer() {
               <span className="text-base font-semibold tracking-tight">BillGuard</span>
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-              A second opinion on your medical bill — check charges against CMS Medicare reference rates.
+              A second opinion on your medical bill. Check charges against CMS Medicare reference rates.
             </p>
           </div>
           <nav aria-label="Footer" className="flex flex-col gap-2">

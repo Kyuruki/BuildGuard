@@ -1,6 +1,6 @@
-// The signature element: a stylized fragment of an itemized statement showing the
-// core reconciliation — billed vs. Medicare reference, with the overcharge flagged.
-// It's illustrative (sample data), presented as a labelled figure for screen readers.
+// A stylized fragment of an itemized statement showing the core reconciliation:
+// billed vs. Medicare reference, with the overcharge flagged. It's illustrative
+// (sample data), presented as a labelled figure for screen readers.
 
 const ROWS = [
   { code: "99213", label: "Office visit, established patient", billed: 250.0, ref: 91.0 },

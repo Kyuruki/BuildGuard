@@ -206,6 +206,14 @@ npm install
 npm run dev        # Vite dev server
 npm run build      # production build -> dist/
 npm run lint
+npm test           # vitest unit tests (lib/ + api/ handlers, in tests/)
+```
+
+Backend unit tests (pure logic in `backend.py`; no DB/Tesseract needed; `modal` is
+stubbed in `tests/conftest.py`):
+```
+python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m pytest tests/test_backend.py
 ```
 > Local `/api/*` calls only resolve when running through the Vercel dev runtime
 > (`vercel dev`) or once deployed — plain `vite dev` does not execute the

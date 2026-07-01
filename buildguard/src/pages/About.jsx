@@ -17,12 +17,12 @@ export default function About() {
         </p>
         <p>
           BillGuard exists to give you one honest reference point: what Medicare pays for the same code. It's not the
-          whole story — but it's a solid place to start a conversation with a billing department, backed by public data
+          whole story, but it's a solid place to start a conversation with a billing department, backed by public data
           rather than a hunch.
         </p>
         <p>
           It's deliberately small and transparent. It reads your bill, compares codes to official CMS fee schedules, and
-          shows its work — no accounts, no stored data, no AI guessing at your numbers. The only AI involved writes the
+          shows its work. No accounts, no stored data, no AI guessing at your numbers. The only AI involved writes the
           optional dispute letter, from figures BillGuard has already verified.
         </p>
       </div>
@@ -30,7 +30,7 @@ export default function About() {
       <dl className="mt-12 grid max-w-3xl gap-6 sm:grid-cols-3">
         {[
           ["Independent", "Not affiliated with CMS, Medicare, or any insurer."],
-          ["Transparent", "Rates come from public CMS fee schedules — codes it can't confirm are marked Unverified."],
+          ["Transparent", "Rates come from public CMS fee schedules. Codes it can't confirm are marked Unverified."],
           ["Private", "Processed in memory and discarded. Nothing you upload is stored."],
         ].map(([term, desc]) => (
           <div key={term} className="rounded-[var(--radius-card)] border border-line p-6">

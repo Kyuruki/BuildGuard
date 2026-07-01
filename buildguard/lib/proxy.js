@@ -18,7 +18,7 @@ export function allowedOrigins() {
 }
 
 // Reject browser cross-origin requests. A request with no Origin header
-// (server-to-server, curl, same-origin GET) passes this check — the real backend
+// (server-to-server, curl, same-origin GET) passes this check; the real backend
 // protection is the shared secret to Modal, not this Origin gate.
 export function originAllowed(req) {
   const origin = req.headers.origin;
@@ -28,7 +28,7 @@ export function originAllowed(req) {
     const { hostname, protocol } = new URL(origin);
     if (protocol !== "https:") return false;
     // The owned custom domain (any subdomain) and THIS team's own Vercel
-    // production/preview deployments only — not any buildguard-*.vercel.app tenant.
+    // production/preview deployments only, not any buildguard-*.vercel.app tenant.
     if (hostname === "kyuruki.cc" || hostname.endsWith(".kyuruki.cc")) return true;
     if (hostname === "buildguard-alpha.vercel.app") return true;
     if (hostname.endsWith("-kyurukis-projects.vercel.app")) return true;

@@ -41,3 +41,4 @@ test_medical_bill.*
 # Python
 __pycache__/
 *.pyc
+.venv/

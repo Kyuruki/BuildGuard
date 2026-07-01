@@ -6,7 +6,7 @@ import Seo from "./components/Seo.jsx";
 import Home from "./pages/Home.jsx";
 import { PAGE_META, DEFAULT_META } from "./content.js";
 
-// Home (the landing route) is eager so the first paint has full content — lazy-loading
+// Home (the landing route) is eager so the first paint has full content; lazy-loading
 // it would render a short fallback, then push the footer down on load (a big layout
 // shift). The rest are code-split.
 const HowItWorks = lazy(() => import("./pages/HowItWorks.jsx"));
@@ -32,8 +32,8 @@ export default function App() {
   const hasMounted = useRef(false);
 
   // <title> is owned by <Seo/> (React 19 metadata). On client-side NAVIGATIONS (not
-  // the initial load), announce the page, move focus to <main>, and reset scroll —
-  // skipping this on first mount keeps the skip link and header reachable on load.
+  // the initial load), announce the page, move focus to <main>, and reset scroll.
+  // Skipping this on first mount keeps the skip link and header reachable on load.
   useEffect(() => {
     if (hasMounted.current) {
       const title = (PAGE_META[location.pathname] || DEFAULT_META).title;

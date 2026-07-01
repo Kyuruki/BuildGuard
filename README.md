@@ -10,17 +10,17 @@ anonymous, and nothing you upload is stored.
 
 1. **Upload** a bill as an image (PNG/JPEG) or PDF.
 2. **OCR** extracts the text (Tesseract). PDFs are rasterized in memory (PyMuPDF).
-3. **Regex** pulls out CPT/HCPCS billing codes and dollar amounts — a line only counts if
+3. **Regex** pulls out CPT/HCPCS billing codes and dollar amounts. A line only counts if
    it has both a 5-digit code and a dollar amount.
 4. **Fee-schedule lookup** checks each code against the CMS Physician Fee Schedule and the
    CMS Clinical Laboratory Fee Schedule.
-5. **Results** show every line item — what you were charged, the Medicare reference rate,
+5. **Results** show every line item: what you were charged, the Medicare reference rate,
    the dollar overcharge, and a status (Overcharged / Within range / Unverified).
-6. **Dispute letter** — if verified overcharges are found, Claude drafts a professional,
+6. **Dispute letter**: if verified overcharges are found, Claude drafts a professional,
    first-person dispute letter you can copy or download. Overcharges are re-verified
    server-side, so the letter only cites figures BillGuard confirmed against CMS data.
 
-Codes not found in either fee schedule are flagged **Unverified** — the app never asserts
+Codes not found in either fee schedule are flagged **Unverified**; the app never asserts
 an overcharge it can't confirm.
 
 ## Tech stack
@@ -28,10 +28,10 @@ an overcharge it can't confirm.
 | Layer | Technology |
 |---|---|
 | Frontend | React 19 + Vite 8 + Tailwind v4 + React Router 7 (Vercel) |
-| API proxy | Vercel Serverless Functions (`/api`) — keep the Modal URL private |
+| API proxy | Vercel Serverless Functions (`/api`) that keep the Modal URL private |
 | Backend | Python + FastAPI on Modal |
 | OCR / PDF | Tesseract (`pytesseract`) + in-memory PDF rasterization (PyMuPDF) |
-| Fee-schedule DB | PostgreSQL (Neon) — CMS PFS + CLFS reference data |
+| Fee-schedule DB | PostgreSQL (Neon) with CMS PFS + CLFS reference data |
 | Letter generation | Claude Haiku (Anthropic) |
 
 ## Architecture
@@ -69,16 +69,24 @@ npm install
 npm run dev        # Vite dev server (frontend only)
 npm run build      # production build -> dist/
 npm run lint
+npm test           # vitest unit tests (proxy, rate limiter, /api handlers)
+```
+
+Backend unit tests (Stage 1 extraction, validation, sanitization) run with pytest:
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m pytest tests/test_backend.py
 ```
 
 > The `/api/*` proxy functions only execute under the Vercel runtime (`vercel dev`) or once
-> deployed — plain `vite dev` serves the frontend but not the serverless functions.
+> deployed. Plain `vite dev` serves the frontend but not the serverless functions.
 
 Backend (Modal): `modal serve backend.py` (dev) / `modal deploy backend.py` (publish).
 
 ## Deploy
 
-**Prerequisites — provision the shared secret on both sides (the backend fails closed
+**Prerequisites: provision the shared secret on both sides (the backend fails closed
 without it):**
 
 ```bash
@@ -103,11 +111,11 @@ modal deploy backend.py       # backend (Modal workspace "kyuruki", app "billgua
 ```
 
 The CMS reference data is already loaded in Neon (`fee_schedule`, `clfs_fee_schedule`).
-`load_fees.py` / `load_clfs.py` are one-time loaders — **do not re-run them.**
+`load_fees.py` / `load_clfs.py` are one-time loaders. **Do not re-run them.**
 
 ## Privacy
 
-Uploads are processed **in memory only** and discarded when the request ends — no bill
+Uploads are processed **in memory only** and discarded when the request ends. No bill
 image, OCR text, or personal/health data is saved to disk or a database. There are no
 accounts. See the Privacy page and [SECURITY.md](buildguard/SECURITY.md).
 
@@ -115,12 +123,12 @@ accounts. See the Privacy page and [SECURITY.md](buildguard/SECURITY.md).
 
 BillGuard is an informational tool, **not** legal, medical, or financial advice, and is not
 affiliated with CMS, Medicare, or any insurer. Medicare reference rates are a benchmark,
-not a statement of what you owe — a charge above the reference rate can be legitimate.
+not a statement of what you owe, and a charge above the reference rate can be legitimate.
 Always verify against your own bill and plan before acting.
 
 ## Limitations
 
 - OCR quality depends on how clearly the bill was scanned/photographed.
-- Medicare rates are a reference benchmark, not a legal entitlement — negotiated rates vary.
+- Medicare rates are a reference benchmark, not a legal entitlement; negotiated rates vary.
 - Only CPT/HCPCS codes in the CMS fee schedules are covered; facility fees and other
   charges may not be recognized.

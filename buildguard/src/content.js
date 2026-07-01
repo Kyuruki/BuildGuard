@@ -20,44 +20,44 @@ export const NAV = [
 // screen-reader route announcement). Keep titles ≤ ~60 chars, descriptions ≤ ~160.
 export const PAGE_META = {
   "/": {
-    title: "BillGuard — Check your medical bill against Medicare rates",
+    title: "BillGuard: Check your medical bill against Medicare rates",
     description:
-      "Upload a medical or dental bill and check its charges against official CMS Medicare reference rates. See likely overcharges and draft a dispute letter — free, anonymous, nothing stored.",
+      "Upload a medical or dental bill and check its charges against official CMS Medicare reference rates. See likely overcharges and draft a dispute letter. Free, anonymous, nothing stored.",
   },
   "/analyze": {
-    title: "Analyze a bill — BillGuard",
+    title: "Analyze a bill | BillGuard",
     description:
       "Upload a bill to check every code against CMS Medicare reference rates, see likely overcharges, and generate a dispute letter. Processed in memory, never stored.",
   },
   "/how-it-works": {
-    title: "How it works — BillGuard",
+    title: "How it works | BillGuard",
     description:
-      "How BillGuard reads your bill: OCR extracts the codes and charges, then compares each to two official CMS fee schedules — no AI guessing at your numbers.",
+      "How BillGuard reads your bill: OCR extracts the codes and charges, then compares each to two official CMS fee schedules. No AI guesses at your numbers.",
   },
   "/faq": {
-    title: "FAQ — BillGuard",
+    title: "FAQ | BillGuard",
     description:
       "Answers about how BillGuard flags overcharges, what CMS Medicare reference rates mean, how your bill is handled, and whether it's affiliated with Medicare.",
   },
   "/privacy": {
-    title: "Privacy — BillGuard",
+    title: "Privacy | BillGuard",
     description:
       "How BillGuard handles your bill: processed in memory and discarded, with no accounts and nothing stored. Health-adjacent data is kept to a minimum.",
   },
   "/about": {
-    title: "About — BillGuard",
+    title: "About | BillGuard",
     description:
-      "Why BillGuard exists — an independent, transparent tool that checks medical bills against public CMS Medicare rates so you can question charges with confidence.",
+      "Why BillGuard exists: an independent, transparent tool that checks medical bills against public CMS Medicare rates so you can question charges with confidence.",
   },
 };
 
 export const DEFAULT_META = PAGE_META["/"];
 
-// The disclaimer, worn openly. Used in the footer, the tool, and Privacy.
+// The disclaimer. Used in the footer, the tool, and Privacy.
 export const DISCLAIMER =
-  "BillGuard is an informational tool, not legal, medical, or financial advice. It is not affiliated with CMS, Medicare, or any insurer. Medicare reference rates are a benchmark, not a statement of what you owe — verify against your own bill and plan before acting.";
+  "BillGuard is an informational tool, not legal, medical, or financial advice. It is not affiliated with CMS, Medicare, or any insurer. Medicare reference rates are a benchmark, not a statement of what you owe. Verify against your own bill and plan before acting.";
 
-// How-it-works: a genuine ordered sequence, so numbered markers are earned.
+// How-it-works steps, in order.
 export const STEPS = [
   {
     n: "01",
@@ -67,12 +67,12 @@ export const STEPS = [
   {
     n: "02",
     title: "We read the codes and charges",
-    body: "Optical character recognition pulls out the CPT/HCPCS codes and dollar amounts — plain pattern-matching, no AI guessing at your numbers.",
+    body: "Optical character recognition pulls out the CPT/HCPCS codes and dollar amounts. It's plain pattern matching, with no AI guessing at your numbers.",
   },
   {
     n: "03",
     title: "We compare to CMS Medicare rates",
-    body: "Each code is checked against two official CMS fee schedules — the Physician Fee Schedule and the Clinical Laboratory Fee Schedule.",
+    body: "Each code is checked against two official CMS fee schedules: the Physician Fee Schedule and the Clinical Laboratory Fee Schedule.",
   },
   {
     n: "04",
@@ -92,23 +92,23 @@ export const FAQ = [
   },
   {
     q: "What are CMS Medicare reference rates?",
-    a: "CMS (the Centers for Medicare & Medicaid Services) publishes standardized payment rates for medical procedures. They're a widely used benchmark for what a service costs. They are not a cap on what a provider may bill or what you owe — but a charge many times the reference rate is worth questioning.",
+    a: "CMS (the Centers for Medicare & Medicaid Services) publishes standardized payment rates for medical procedures. They're a widely used benchmark for what a service costs. They are not a cap on what a provider may bill or what you owe, but a charge many times the reference rate is worth questioning.",
   },
   {
     q: "Is my bill stored anywhere?",
     a: "No. Your upload is processed in memory to read the text, then discarded. BillGuard does not save your bill image, the extracted text, or any personal or health information to disk or a database. There are no accounts.",
   },
   {
-    q: "Why are some codes marked “Unverified”?",
-    a: "Not every code appears in the CMS fee schedules BillGuard checks (for example, some facility fees or bundled items). When a code isn't in the data, BillGuard marks it Unverified rather than guessing — it never asserts an overcharge it can't confirm.",
+    q: "Why are some codes marked 'Unverified'?",
+    a: "Not every code appears in the CMS fee schedules BillGuard checks (for example, some facility fees or bundled items). When a code isn't in the data, BillGuard marks it Unverified rather than guessing. It never asserts an overcharge it can't confirm.",
   },
   {
     q: "Does an overcharge mean I was defrauded?",
-    a: "No. A charge above the Medicare reference rate is common and can be entirely legitimate — negotiated rates, facility costs, and your specific plan all vary. A flag is a prompt to ask for an itemized justification, not an accusation.",
+    a: "No. A charge above the Medicare reference rate is common and can be entirely legitimate. Negotiated rates, facility costs, and your specific plan all vary. A flag is a prompt to ask for an itemized justification, not an accusation.",
   },
   {
     q: "Can I really dispute a bill with the letter?",
-    a: "The letter is a professional, first-person request for review and itemization that you can copy, edit, and send to your provider's billing department. It's a starting point you control — not a legal filing, and not a guarantee of an adjustment.",
+    a: "The letter is a professional, first-person request for review and itemization that you can copy, edit, and send to your provider's billing department. It's a starting point you control, not a legal filing, and not a guarantee of an adjustment.",
   },
   {
     q: "What files can I upload?",

@@ -80,7 +80,7 @@ export default function ResultsTable({ lineItems, summary }) {
                   <th scope="row" className="border-t border-line px-4 py-3 font-semibold text-ink">{li.code}</th>
                   <td className="border-t border-line px-4 py-3 text-right text-ink">{money(li.charged)}</td>
                   <td className="border-t border-line px-4 py-3 text-right text-ink-soft">
-                    {li.medicare_rate != null ? money(li.medicare_rate) : "—"}
+                    {li.medicare_rate != null ? money(li.medicare_rate) : "-"}
                   </td>
                   <td className="border-t border-line px-4 py-3 text-right">
                     {status === "overcharged" ? (
@@ -89,7 +89,7 @@ export default function ResultsTable({ lineItems, summary }) {
                         <span className="ml-1 text-xs font-medium text-flag">{li.overcharge_multiple}×</span>
                       </span>
                     ) : (
-                      <span className="text-muted">—</span>
+                      <span className="text-muted">-</span>
                     )}
                   </td>
                   <td className="border-t border-line px-4 py-3">

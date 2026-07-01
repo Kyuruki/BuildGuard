@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ *
- * BillGuard theme — "auditor's ledger": ink-navy on paper-white, one
+ * BillGuard theme ("auditor's ledger"): ink-navy on paper-white, one
  * confident medical blue for actions, red reserved for overcharges,
  * green for within-range. Data (codes, money) renders in IBM Plex Mono.
  * ------------------------------------------------------------------ */
@@ -10,9 +10,9 @@
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
 
   /* Ink & paper */
-  --color-ink: #0a2540; /* primary text — ~15:1 on white */
-  --color-ink-soft: #33506d; /* secondary text — ~7.4:1 */
-  --color-muted: #5a7089; /* tertiary / captions — ~4.6:1 on white */
+  --color-ink: #0a2540; /* primary text, ~15:1 on white */
+  --color-ink-soft: #33506d; /* secondary text, ~7.4:1 */
+  --color-muted: #5a7089; /* tertiary / captions, ~4.6:1 on white */
   --color-paper: #ffffff;
   --color-paper-2: #f4f8fc; /* section tint */
   --color-line: #d8e2ee; /* hairline borders */
@@ -26,7 +26,7 @@
   --color-brand-700: #0e4694; /* link text / hover (~7.3:1) */
   --color-brand-900: #0a2540;
 
-  /* Functional — used only where they carry meaning */
+  /* Functional colors, used only where they carry meaning */
   --color-flag: #b42318; /* overcharge (~5.9:1) */
   --color-flag-bg: #fdecea;
   --color-ok: #067144; /* within range / verified (~4.8:1) */

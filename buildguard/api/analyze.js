@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     return res.status(429).json({ detail: "You've hit the analysis limit. Please wait a moment and try again." });
   }
 
-  // Buffer the single uploaded file in memory — never spool PHI to disk.
+  // Buffer the single uploaded file in memory; never spool PHI to disk.
   const chunks = [];
   const form = formidable({
     maxFiles: 1,

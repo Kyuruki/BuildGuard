@@ -88,7 +88,7 @@ export default function Analyzer() {
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">Check a medical bill</h1>
         <p className="mt-3 text-lg leading-relaxed text-ink-soft">
           Upload an itemized bill. We'll read the codes, compare each to CMS Medicare reference rates, and flag likely
-          overcharges — then draft a dispute letter if there are any.
+          overcharges, then draft a dispute letter if there are any.
         </p>
       </div>
 
@@ -103,7 +103,7 @@ export default function Analyzer() {
           {analyzing
             ? "Analyzing your bill…"
             : result
-              ? `Analysis complete — ${summary.total} line item${summary.total === 1 ? "" : "s"}, $${summary.totalOvercharge.toFixed(2)} potential overcharge.`
+              ? `Analysis complete: ${summary.total} line item${summary.total === 1 ? "" : "s"}, $${summary.totalOvercharge.toFixed(2)} potential overcharge.`
               : ""}
         </div>
         <div aria-live="assertive" role="alert" className="mt-3 empty:hidden">

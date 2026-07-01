@@ -1,4 +1,4 @@
-# BillGuard — app
+# BillGuard app
 
 This folder contains the BillGuard application (frontend, `/api` proxy, and the Modal
 `backend.py`).

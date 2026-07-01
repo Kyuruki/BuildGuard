@@ -1,4 +1,4 @@
-# BillGuard — all crawlers (including AI crawlers) welcome.
+# BillGuard: all crawlers (including AI crawlers) welcome.
 User-agent: *
 Allow: /
 

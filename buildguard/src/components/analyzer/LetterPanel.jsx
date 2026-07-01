@@ -48,12 +48,12 @@ export default function LetterPanel({
   function copy() {
     if (!letter) return;
     if (!navigator.clipboard?.writeText) {
-      flash("Couldn't copy automatically — select the letter and copy manually.");
+      flash("Couldn't copy automatically. Select the letter and copy manually.");
       return;
     }
     navigator.clipboard.writeText(letter).then(
       () => flash("Copied to clipboard"),
-      () => flash("Couldn't copy automatically — select the letter and copy manually."),
+      () => flash("Couldn't copy automatically. Select the letter and copy manually."),
     );
   }
 
@@ -75,13 +75,13 @@ export default function LetterPanel({
 
       {!canGenerate ? (
         <p className="mt-2 text-sm text-ink-soft">
-          No verified overcharges on this bill — there's nothing to dispute here.
+          No verified overcharges on this bill, so there's nothing to dispute here.
         </p>
       ) : (
         <>
           <p className="mt-2 max-w-prose text-sm text-ink-soft">
-            Add your name and the provider if you like — leave them blank and the letter uses placeholders you can fill
-            in. The letter only argues charges we verified against CMS data.
+            Add your name and the provider if you like, or leave them blank and the letter uses placeholders you can
+            fill in. The letter only argues charges we verified against CMS data.
           </p>
 
           <div className="mt-5 flex flex-col gap-4 sm:flex-row">
@@ -122,7 +122,7 @@ export default function LetterPanel({
               {copyMsg}
             </span>
           </div>
-          <p className="mt-3 text-xs text-muted">Review and edit the letter before sending — it's a starting point you control.</p>
+          <p className="mt-3 text-xs text-muted">Review and edit the letter before sending. It's a starting point you control.</p>
         </div>
       )}
     </section>

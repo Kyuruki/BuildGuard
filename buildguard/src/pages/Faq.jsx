@@ -1,6 +1,8 @@
 import { Container, Eyebrow, Button } from "../components/ui.jsx";
 import { FAQ } from "../content.js";
 
+// Escape "<" so the inline JSON-LD script can never be broken out of, even if
+// the FAQ copy ever gains markup-like text.
 const FAQ_JSONLD = JSON.stringify({
   "@context": "https://schema.org",
   "@type": "FAQPage",
@@ -9,7 +11,7 @@ const FAQ_JSONLD = JSON.stringify({
     name: item.q,
     acceptedAnswer: { "@type": "Answer", text: item.a },
   })),
-});
+}).replace(/</g, "\\u003c");
 
 export default function Faq() {
   return (
@@ -23,7 +25,7 @@ export default function Faq() {
         </p>
       </div>
 
-      {/* Native <details> — keyboard-operable and screen-reader friendly with no JS. */}
+      {/* Native <details>: keyboard-operable and screen-reader friendly with no JS. */}
       <div className="mt-10 max-w-3xl divide-y divide-line border-y border-line">
         {FAQ.map((item, i) => (
           <details key={i} className="group">

@@ -30,7 +30,7 @@ function classes(variant, size, className) {
   return `${buttonBase} ${buttonSizes[size]} ${buttonVariants[variant]} ${className}`;
 }
 
-// Renders as a real <button> or, with `to`, a router <Link> — same look, correct semantics.
+// Renders as a real <button> or, with `to`, a router <Link>: same look, correct semantics.
 export function Button({ to, href, variant = "primary", size = "md", className = "", children, ...rest }) {
   const cls = classes(variant, size, className);
   if (to) return <Link to={to} className={cls} {...rest}>{children}</Link>;
