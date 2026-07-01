@@ -2,16 +2,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 
-// Self-hosted fonts (served from our own origin — keeps the CSP tight, no FOUT
-// from a third-party font CDN).
-import "@fontsource/ibm-plex-sans/latin-400.css";
-import "@fontsource/ibm-plex-sans/latin-500.css";
-import "@fontsource/ibm-plex-sans/latin-600.css";
-import "@fontsource/ibm-plex-sans/latin-700.css";
-import "@fontsource/ibm-plex-mono/latin-400.css";
-import "@fontsource/ibm-plex-mono/latin-500.css";
-import "@fontsource/ibm-plex-mono/latin-600.css";
-
+// Self-hosted fonts from /fonts (see fonts.css). Critical weights are preloaded in
+// index.html so they land before first paint — no layout shift on swap.
+import "./fonts.css";
 import "./index.css";
 import App from "./App.jsx";
 

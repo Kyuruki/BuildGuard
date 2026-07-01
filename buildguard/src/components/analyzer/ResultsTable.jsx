@@ -86,7 +86,7 @@ export default function ResultsTable({ lineItems, summary }) {
                     {status === "overcharged" ? (
                       <span className="font-semibold text-flag">
                         {money(li.overcharge_amount)}
-                        <span className="ml-1 text-xs font-medium text-flag/80">{li.overcharge_multiple}×</span>
+                        <span className="ml-1 text-xs font-medium text-flag">{li.overcharge_multiple}×</span>
                       </span>
                     ) : (
                       <span className="text-muted">—</span>

@@ -48,7 +48,7 @@ export default function LedgerDemo() {
                   <td className="py-3 pr-2 text-right text-ink-soft">{money(r.ref)}</td>
                   <td className="py-3 pl-2 text-right">
                     <span className="font-semibold text-flag">{money(over)}</span>
-                    <span className="mt-0.5 block text-xs font-medium text-flag/80">{mult.toFixed(1)}×</span>
+                    <span className="mt-0.5 block text-xs font-medium text-flag">{mult.toFixed(1)}×</span>
                   </td>
                 </tr>
               );

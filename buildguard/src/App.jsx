@@ -3,10 +3,12 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import Header from "./components/Header.jsx";
 import Footer from "./components/Footer.jsx";
 import Seo from "./components/Seo.jsx";
+import Home from "./pages/Home.jsx";
 import { PAGE_META, DEFAULT_META } from "./content.js";
 
-// Route-level code splitting — each page is its own chunk.
-const Home = lazy(() => import("./pages/Home.jsx"));
+// Home (the landing route) is eager so the first paint has full content — lazy-loading
+// it would render a short fallback, then push the footer down on load (a big layout
+// shift). The rest are code-split.
 const HowItWorks = lazy(() => import("./pages/HowItWorks.jsx"));
 const Faq = lazy(() => import("./pages/Faq.jsx"));
 const Privacy = lazy(() => import("./pages/Privacy.jsx"));
@@ -15,8 +17,9 @@ const Analyzer = lazy(() => import("./pages/Analyzer.jsx"));
 const NotFound = lazy(() => import("./pages/NotFound.jsx"));
 
 function PageFallback() {
+  // Reserve most of the viewport so a lazy route swapping in doesn't jump the footer.
   return (
-    <div className="mx-auto flex min-h-[40vh] max-w-5xl items-center justify-center px-5" role="status" aria-live="polite">
+    <div className="mx-auto flex min-h-[75svh] max-w-5xl items-center justify-center px-5" role="status" aria-live="polite">
       <span className="text-sm text-muted">Loading…</span>
     </div>
   );
