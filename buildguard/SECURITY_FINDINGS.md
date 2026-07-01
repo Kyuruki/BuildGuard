@@ -25,6 +25,31 @@ or derivative impact). Severity = adjudicated. "→ Phase N" = where it gets fix
 
 ---
 
+## Resolution status (updated after Phase 1)
+
+**Phase 1 (backend + proxy hardening) — DONE.** All findings below except the ones
+explicitly deferred are fixed and then re-verified by an adversarial review workflow
+(9 follow-up issues found, all fixed — notably a *second* decompression-bomb vector:
+a single giant-page PDF, plus flipping the trust boundary from fail-open to fail-closed).
+
+- **Fixed in Phase 1:** H1 (PDF page-count *and* per-page MediaBox×UserUnit guard before
+  render), H2 (`X-Proxy-Secret` shared secret, fail-closed), M1 (proxy buffers upload in
+  memory; backend reads raw body — no disk spool), M2 (image pixel/dimension caps), M3
+  (letter re-verifies overcharges server-side; `code` validated; null-rate crash gone),
+  L1 (proxies propagate Modal status + `{detail}` error shape), L2 (system-prompt +
+  `<bill_data>` fence + sanitization), L3/L4 (20 MB caps at proxy and backend), L5 (magic
+  bytes), L6 (graceful 4xx on bad input), L7 (proxy method guard + validation), L8 (proxy
+  field whitelist), L9 (Origin allowlist), L10 (OCR text no longer returned), L13 (pip
+  pinned; OSV-clean — apt intentionally unpinned, documented), L14 (dev-only npm advisories),
+  L15 (bounded money regex), I1 (security headers via `vercel.json`).
+- **Deferred by design:** L11 (poppler writes a *transient, auto-cleaned* PDF-render
+  tempdir — unavoidable with pdf2image/poppler; now documented honestly rather than
+  claimed away. Optional stricter fix: swap to in-memory PyMuPDF — needs user sign-off as
+  it's a rendering-library change). L12 (third-party Anthropic disclosure → Phase 3
+  Privacy page). The **rate-limiting** half of H2/L8/L9 → Phase 2.
+
+---
+
 ## HIGH
 
 ### H1 — PDF/image decompression bomb: pages rasterized before the page cap

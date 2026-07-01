@@ -20,30 +20,32 @@ blue+white design; process uploads in memory only, persist no PHI.
 - [ ] **CHECKPOINT: show PLAN.md + SECURITY_FINDINGS.md and wait for go-ahead.**
 
 ## Phase 1 — Backend hardening + cleanup (`backend.py`, `/api` proxy)
-- [ ] Refactor `backend.py`: clear functions/modules, type hints, docstrings,
-      structured logging (no prints), centralized config. Keep Stage 1/2/letter intact.
-- [ ] Validate uploads by **magic bytes** (accept only real PNG/JPEG/PDF), not extension.
-- [ ] Keep 20 MB and 30-page caps; add **decompression-bomb guard** (reject absurd
-      pixel dimensions / page counts *before* processing; check page count before
-      rasterizing).
-- [ ] Tighten every endpoint: accept only expected fields; reject malformed/oversized
-      input with clean 4xx; never leak stack traces/paths/secrets/internal errors;
-      return structured JSON errors.
-- [ ] Lock **CORS** to the Vercel production domain(s) only — no wildcard.
-- [ ] Add a **proxy↔Modal trust boundary** (shared secret/header) so Modal only
-      accepts calls from the proxy (defense-in-depth; endpoints are public URLs).
-- [ ] Add **security headers** via the Vercel layer (`vercel.json`): CSP, HSTS,
-      `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`,
-      restrictive `Permissions-Policy`.
-- [ ] **Prompt-injection defense** on letter generation: treat OCR/client text as
-      untrusted DATA, clearly delimited; instruct the model to never follow
-      instructions in it; neutralize break-out attempts.
-- [ ] Guarantee **no PHI/bill data written to disk or DB** anywhere (fix formidable
-      temp-file write + cleanup; reconsider echoing full OCR text to client).
-- [ ] Run a **pip dependency vulnerability check**; pin + patch as needed.
-- [ ] Harden the `/api` proxies: method guard, size cap, field whitelist, propagate
-      Modal status codes, no unhandled throws, no in-memory-only violations.
-- [ ] **CHECKPOINT** ✅ Phase 1.
+- [x] Refactor `backend.py`: clear functions, type hints, docstrings, structured
+      logging (no prints), centralized config. Stage 1/2/letter intact. (single file
+      kept for Modal simplicity; helpers cleanly sectioned.)
+- [x] Validate uploads by **magic bytes** (`sniff_file_type`: PNG/JPEG/PDF), not extension.
+- [x] Keep 20 MB and 30-page caps; **decompression-bomb guards**: PDF page count via
+      `pdfinfo` + per-page MediaBox×UserUnit dimension check (`guard_pdf_page_sizes`,
+      pypdf) *before* rasterizing; image pixel/dimension caps + `Image.MAX_IMAGE_PIXELS`.
+- [x] Tighten endpoints: raw-body/manual validation, clean structured 4xx (`{detail}`),
+      no stack traces/paths/secrets leaked, generic 500; **auth runs before validation**.
+- [x] Lock **CORS/Origin**: `lib/proxy.js` Origin allowlist (custom domain + this team's
+      Vercel hosts only, no wildcard); Modal takes no browser CORS (server-to-server).
+- [x] **Proxy↔Modal trust boundary**: `X-Proxy-Secret` shared secret, constant-time
+      check on both POST endpoints, **fail-closed** when unset (`proxy-auth` secret).
+- [x] **Security headers** via `vercel.json`: CSP, HSTS(preload), nosniff, X-Frame DENY,
+      Referrer-Policy, Permissions-Policy + function `maxDuration`.
+- [x] **Prompt-injection defense**: instructions in Claude `system`; untrusted values in
+      a sanitized `<bill_data>` fence; model told to treat the fence as data only.
+- [x] Guarantee **no PHI persisted**: proxy buffers upload in memory (no temp file);
+      backend reads raw body in memory (no UploadFile disk-spool); no OCR text echoed;
+      DB reads only. (Poppler's transient auto-cleaned PDF tempdir documented honestly.)
+- [x] **pip vulnerability check**: all deps pinned; OSV shows no advisories (2026-06-30).
+- [x] Harden `/api` proxies: method guard, 20 MB cap, field whitelist, Origin check,
+      shared-secret header, Modal status propagation, no unhandled throws.
+- [x] Adversarial verification workflow run; all 9 verified findings fixed (incl. HIGH
+      single-giant-page PDF raster bomb; fail-open→fail-closed).
+- [ ] **CHECKPOINT** ✅ Phase 1 — pending user go-ahead to Phase 2 (rate limiting).
 
 ## Phase 2 — Rate limiting + abuse prevention
 - [ ] IP-based limits primarily at the Vercel proxy; coarse hard cap in Modal as

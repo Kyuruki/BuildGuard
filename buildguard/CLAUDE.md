@@ -37,8 +37,11 @@ buildguard/
     index.css           Global styles / CSS variables (currently PURPLE theme)
     assets/             hero.png, logos
   api/                  Vercel Serverless Functions (the "proxy")
-    analyze.js          POST: receives upload, forwards to Modal /analyze
-    generate-letter.js  POST: forwards JSON to Modal /generate_letter
+    analyze.js          POST: buffers upload in memory, forwards to Modal /analyze
+    generate-letter.js  POST: validates + whitelists JSON, forwards to Modal /generate_letter
+  lib/
+    proxy.js            Shared proxy helpers (Origin allowlist, shared-secret header, Modal URLs)
+  vercel.json           Security headers (CSP/HSTS/etc.) + function maxDuration config
   backend.py            Modal app "billguard": analyze, generate_letter, health
   load_fees.py          ONE-TIME loader for fee_schedule (already ran — DO NOT re-run)
   load_clfs.py          ONE-TIME loader for clfs_fee_schedule (already ran — DO NOT re-run)
@@ -97,13 +100,21 @@ and unauthenticated — see SECURITY_FINDINGS.md; hardening this is a Phase 1 go
 
 ## Endpoints
 
+All Modal POST endpoints require the shared-secret header **`X-Proxy-Secret`**
+(value = `PROXY_SHARED_SECRET`) — the proxy sends it; direct callers are rejected 403.
+Enforced only when the secret is configured (fail-open with a warning otherwise).
+
 Modal (workspace `kyuruki`, app `billguard`):
 - `POST https://kyuruki--billguard-analyze.modal.run` — multipart field **`bill`**;
-  returns `{status, text, line_items[], line_items_found}`. Secret: `neon-db`.
+  returns `{status, request_id, line_items[], line_items_found}`. **No raw OCR `text`
+  or `raw_line` is returned** (PHI minimization). Secrets: `neon-db`, `proxy-auth`.
 - `POST https://kyuruki--billguard-generate-letter.modal.run` — JSON body
-  (`GenerateLetterRequest`); returns `{status, letter}` or `{status, letter:null, message}`.
-  Secret: `anthropic-secret`.
-- `GET  https://kyuruki--billguard-health.modal.run` — `{status:"ok", message:...}`.
+  (`GenerateLetterRequest`); returns `{status, request_id, letter}` or
+  `{status, letter:null, message}`. **Re-verifies overcharges against the CMS tables
+  server-side** (ignores client-supplied rates). Secrets: `anthropic-secret`,
+  `neon-db`, `proxy-auth`.
+- `GET  https://kyuruki--billguard-health.modal.run` — `{status:"ok", message:...}`
+  (public, no secret).
 
 Vercel proxy (relative paths the SPA calls):
 - `POST /api/analyze` — multipart field **`file`** (formidable) → Modal `bill`.
@@ -115,12 +126,49 @@ rate_source, medicare_rate, overcharge_amount, overcharge_multiple`.
 
 ## Environment variables / secrets
 
-- **Modal secret `neon-db`** → provides `DATABASE_URL` (Neon Postgres) to `analyze`.
-- **Modal secret `anthropic-secret`** → provides `ANTHROPIC_API_KEY` to `generate_letter`.
-- **Loaders** (`load_fees.py`, `load_clfs.py`) read `DATABASE_URL` from a local
-  `.env` via `python-dotenv`. `.env` is gitignored.
-- Frontend: no secrets in the client bundle. Only `VITE_`-prefixed vars are ever
-  exposed to the browser; today there are none.
+**Modal secrets** (provisioned in the `kyuruki` workspace; referenced in `backend.py`):
+- `neon-db` → `DATABASE_URL` (Neon Postgres). Used by `analyze` **and** `generate_letter`.
+- `anthropic-secret` → `ANTHROPIC_API_KEY`. Used by `generate_letter`.
+- `proxy-auth` → `PROXY_SHARED_SECRET`. **NEW in Phase 1 — must be created before the
+  next `modal deploy` or the deploy fails** (it is referenced in the decorators):
+  ```
+  modal secret create proxy-auth PROXY_SHARED_SECRET=<same-random-value-as-vercel>
+  ```
+
+**Vercel env vars** (Project → Settings → Environment Variables):
+- `PROXY_SHARED_SECRET` → same value as the Modal `proxy-auth` secret (the proxy sends
+  it to Modal as `X-Proxy-Secret`). If unset, Modal fails open with a warning.
+- `ALLOWED_ORIGINS` *(optional)* → comma-separated Origin allowlist override. Defaults
+  (in `lib/proxy.js`) already include `billguard.kyuruki.cc` + the `.vercel.app` aliases,
+  plus any `*.kyuruki.cc` and this project's `buildguard-*.vercel.app` preview URLs.
+- `MODAL_ANALYZE_URL`, `MODAL_LETTER_URL` *(optional)* → override the Modal endpoint URLs.
+
+**Loaders** read `DATABASE_URL` from a local `.env` via `python-dotenv`. `.env` is gitignored.
+
+**Frontend:** no secrets in the client bundle. Only `VITE_`-prefixed vars reach the
+browser; there are none. `PROXY_SHARED_SECRET` lives only in the serverless proxy.
+
+## Security model (Phase 1)
+
+- **Trust boundary:** the `/api` proxy is the only intended caller of Modal. It attaches
+  `X-Proxy-Secret`; Modal verifies it (constant-time) and 403s otherwise. The proxy also
+  rejects browser cross-origin requests via an Origin allowlist (`lib/proxy.js`).
+- **Upload safety:** validated by **magic bytes** (PNG/JPEG/PDF), 20 MB cap, and
+  decompression-bomb guards — PDF page count is checked (`pdfinfo`) *before* rasterizing;
+  images are rejected by pixel/dimension caps before decoding (`Image.MAX_IMAGE_PIXELS`).
+- **In-memory only:** the proxy buffers the upload in memory (no temp file); the backend
+  never writes bill data to disk or DB. `analyze` no longer echoes OCR text to the client.
+- **Prompt-injection defense:** letter instructions live in the Claude `system` prompt;
+  untrusted values go inside a `<bill_data>` fence, sanitized (control chars + `<>`
+  stripped, length-capped); the model is told to treat the fence as data only.
+- **Integrity:** `generate_letter` re-derives rates/overcharges from the CMS tables — it
+  never trusts client-supplied `medicare_rate`/`overcharge_amount`.
+- **Errors:** endpoints return structured JSON (`{detail: ...}` / `{error: ...}`) with
+  clean 4xx/5xx; no stack traces, paths, or secrets leak; proxies propagate Modal's status.
+- **Headers (`vercel.json`):** CSP, HSTS (preload), `X-Content-Type-Options: nosniff`,
+  `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, restrictive `Permissions-Policy`.
+- **Dependencies:** Python deps pinned in the Modal image; all checked against OSV with no
+  known advisories (as of 2026-06-30).
 
 ## Database (Neon Postgres) — ALREADY POPULATED, DO NOT WIPE OR RELOAD
 
@@ -159,10 +207,12 @@ Loaders — **already ran; do not re-run** (they `TRUNCATE`). Kept for provenanc
 ## Deploy
 
 - **Modal:** `modal deploy backend.py` (workspace `kyuruki`, app `billguard`).
-  Secrets `neon-db` and `anthropic-secret` must exist in the Modal workspace.
-- **Vercel:** project root is `buildguard/`. Vercel auto-detects Vite (build
-  `npm run build`, output `dist/`) and deploys `api/*.js` as Serverless Functions.
-  There is currently **no `vercel.json`** (added in Phase 1 for headers/config).
+  Secrets `neon-db`, `anthropic-secret`, **and `proxy-auth`** must exist first
+  (see "Environment variables / secrets" — `proxy-auth` is new in Phase 1).
+- **Vercel:** project `buildguard` (root dir `buildguard/`). Auto-detects Vite (build
+  `npm run build`, output `dist/`) and deploys `api/*.js` as Serverless Functions;
+  `vercel.json` applies security headers + function limits. Set `PROXY_SHARED_SECRET`
+  (and optionally `ALLOWED_ORIGINS`) in the project's env vars.
 
 ## Known gotchas
 
@@ -181,14 +231,17 @@ Loaders — **already ran; do not re-run** (they `TRUNCATE`). Kept for provenanc
 - **Field-name mismatch is load-bearing:** browser sends `file`; the proxy renames
   it to `bill` for Modal. Changing either side breaks upload (this bit us before —
   see commits "fixed form field name").
-- **PDF page cap is checked *after* rasterization** today — a decompression-bomb
-  risk being fixed in Phase 1.
-- **Upload is written to a temp file on disk by formidable** in `api/analyze.js`
-  today — violates the in-memory-only policy; being fixed in Phase 1.
+- **`proxy-auth` Modal secret must exist before deploy** (Phase 1) — the decorators
+  reference it, so `modal deploy` fails if it's missing. Create it once (see secrets).
+- **`analyze.js` sets `bodyParser: false`** so formidable can read the raw stream and
+  buffer it in memory. `generate-letter.js` relies on Vercel's default JSON body parse.
 - **Theme is currently purple**, not the clinical blue spec — the whole frontend is
   being rebuilt in Phase 3.
 - **Tailwind is NOT yet installed** despite the intended stack — will be added in
   Phase 3.
+
+  *(Resolved in Phase 1: PDF page cap now checked before rasterization; upload no
+  longer written to disk — buffered in memory.)*
 
 ## Working docs
 
