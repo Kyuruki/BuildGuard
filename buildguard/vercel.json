@@ -4,6 +4,7 @@
     "api/analyze.js": { "maxDuration": 60 },
     "api/generate-letter.js": { "maxDuration": 30 }
   },
+  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }],
   "headers": [
     {
       "source": "/(.*)",
