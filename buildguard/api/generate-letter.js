@@ -1,6 +1,8 @@
 import { originAllowed, modalHeaders, MODAL_LETTER_URL } from "../lib/proxy.js";
+import { rateLimit, clientIp } from "../lib/ratelimit.js";
 
 const MAX_LINE_ITEMS = 50;
+const LETTER_RULES = [{ name: "hour", limit: 5, windowMs: 3_600_000 }];
 
 function strOrNull(v) {
   if (typeof v !== "string") return null;
@@ -14,6 +16,11 @@ export default async function handler(req, res) {
   }
   if (!originAllowed(req)) {
     return res.status(403).json({ detail: "Forbidden" });
+  }
+  const rl = rateLimit(req, "letter", LETTER_RULES);
+  if (!rl.allowed) {
+    res.setHeader("Retry-After", String(rl.retryAfterSec));
+    return res.status(429).json({ detail: "You've reached the dispute-letter limit for now. Please try again later." });
   }
 
   const body = req.body;
@@ -39,7 +46,7 @@ export default async function handler(req, res) {
   try {
     const modalResponse = await fetch(MODAL_LETTER_URL, {
       method: "POST",
-      headers: modalHeaders({ "Content-Type": "application/json" }),
+      headers: modalHeaders({ "Content-Type": "application/json", "x-client-ip": clientIp(req) }),
       body: JSON.stringify(payload),
     });
     const data = await modalResponse.json().catch(() => ({ detail: "Upstream error." }));

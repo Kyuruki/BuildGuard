@@ -48,13 +48,15 @@ blue+white design; process uploads in memory only, persist no PHI.
 - [ ] **CHECKPOINT** ✅ Phase 1 — pending user go-ahead to Phase 2 (rate limiting).
 
 ## Phase 2 — Rate limiting + abuse prevention
-- [ ] IP-based limits primarily at the Vercel proxy; coarse hard cap in Modal as
-      defense-in-depth.
-- [ ] Targets: analyze ≈ 10/min & ≈ 50/day per IP; generate_letter ≈ 5/hour per IP.
-- [ ] Return **HTTP 429 + Retry-After** with a friendly, UI-showable message.
-- [ ] **STOP-AND-ASK** before adding Upstash/Vercel KV (external service). If declined,
-      implement a best-effort per-instance limiter and document its weakness.
-- [ ] **CHECKPOINT** ✅ Phase 2.
+- [x] IP-based limits primarily at the Vercel proxy (`lib/ratelimit.js`); coarse
+      per-container cap in Modal (`coarse_rate_limit`, keyed on forwarded `X-Client-IP`).
+- [x] Targets: analyze 10/min + 50/day per IP; generate_letter 5/hour per IP.
+- [x] Return **HTTP 429 + Retry-After** with a friendly, UI-showable `{detail}` message.
+- [x] **Store decision: user chose best-effort in-memory** (no Upstash/KV). Implemented
+      per-instance limiter; weakness (per-instance, resets on cold start, N× across
+      instances) documented in the module + CLAUDE.md. Upgrade path noted.
+- [x] Behavioral test: 10 allowed / 3 denied per minute, per-IP + per-bucket isolation.
+- [ ] **CHECKPOINT** ✅ Phase 2 — pending user go-ahead to Phase 3 (frontend rebuild).
 
 ## Phase 3 — Frontend rebuild (full site, accessible)
 - [ ] Use the frontend/web-design skill to drive visual quality.

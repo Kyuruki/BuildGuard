@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import re
+import time
 import uuid
 from typing import Optional
 
@@ -47,6 +48,11 @@ MAX_IMAGE_DIMENSION = 20_000             # reject absurd width/height (px)
 PDF_RENDER_DPI = 200                     # bounded rasterization resolution
 MAX_LINE_ITEMS = 50                      # cap client-supplied line items
 MAX_TEXT_FIELD_LEN = 120                 # cap free-text fields (names, etc.)
+
+# Coarse per-container rate caps (defense-in-depth; the Vercel proxy holds the real,
+# tighter per-IP limits). Best-effort: state is per Modal container, lost on cold start.
+COARSE_ANALYZE_PER_MIN = 30
+COARSE_LETTER_PER_HOUR = 15
 
 LETTER_MODEL = "claude-haiku-4-5-20251001"
 LETTER_MAX_TOKENS = 1500
@@ -113,6 +119,33 @@ def verify_proxy(request: Request) -> None:
     provided = request.headers.get("x-proxy-secret", "")
     if not hmac.compare_digest(provided, expected):
         raise HTTPException(status_code=403, detail="Forbidden.")
+
+
+_RATE_BUCKETS: dict[str, tuple[int, float]] = {}
+
+
+def coarse_rate_limit(request: Request, bucket: str, limit: int, window_s: int) -> None:
+    """Coarse per-container in-memory rate cap — defense-in-depth behind the proxy's
+    primary per-IP limits. Best-effort: state lives in this Modal container only and
+    resets on cold start. Keys on the proxy-forwarded end-user IP (X-Client-IP).
+    """
+    now = time.time()
+    if len(_RATE_BUCKETS) > 10_000:  # bound memory: sweep expired entries
+        for stale in [k for k, (_, reset) in _RATE_BUCKETS.items() if now >= reset]:
+            _RATE_BUCKETS.pop(stale, None)
+
+    ip = request.headers.get("x-client-ip") or (request.client.host if request.client else "unknown")
+    key = f"{ip}:{bucket}"
+    count, reset_at = _RATE_BUCKETS.get(key, (0, now + window_s))
+    if now >= reset_at:
+        count, reset_at = 0, now + window_s
+    if count + 1 > limit:
+        raise HTTPException(
+            status_code=429,
+            detail="Rate limit exceeded.",
+            headers={"Retry-After": str(max(1, int(reset_at - now)))},
+        )
+    _RATE_BUCKETS[key] = (count + 1, reset_at)
 
 
 # ---------------------------------------------------------------------------
@@ -432,6 +465,7 @@ async def analyze(request: Request):
     check runs before the body is touched. Nothing touches disk.
     """
     verify_proxy(request)
+    coarse_rate_limit(request, "analyze", COARSE_ANALYZE_PER_MIN, 60)
     request_id = uuid.uuid4().hex[:12]
 
     try:
@@ -471,6 +505,7 @@ async def generate_letter(request: Request):
     return a generic 400 rather than a 422 that echoes the schema.
     """
     verify_proxy(request)
+    coarse_rate_limit(request, "letter", COARSE_LETTER_PER_HOUR, 3600)
     request_id = uuid.uuid4().hex[:12]
 
     try:

@@ -41,6 +41,7 @@ buildguard/
     generate-letter.js  POST: validates + whitelists JSON, forwards to Modal /generate_letter
   lib/
     proxy.js            Shared proxy helpers (Origin allowlist, shared-secret header, Modal URLs)
+    ratelimit.js        Best-effort in-memory per-IP rate limiter (429 + Retry-After)
   vercel.json           Security headers (CSP/HSTS/etc.) + function maxDuration config
   backend.py            Modal app "billguard": analyze, generate_letter, health
   load_fees.py          ONE-TIME loader for fee_schedule (already ran — DO NOT re-run)
@@ -154,6 +155,13 @@ browser; there are none. `PROXY_SHARED_SECRET` lives only in the serverless prox
 - **Trust boundary:** the `/api` proxy is the only intended caller of Modal. It attaches
   `X-Proxy-Secret`; Modal verifies it (constant-time) and 403s otherwise. The proxy also
   rejects browser cross-origin requests via an Origin allowlist (`lib/proxy.js`).
+- **Rate limiting (Phase 2):** per-IP limits at the proxy (`lib/ratelimit.js`) — analyze
+  **10/min + 50/day**, generate-letter **5/hour** — returning **429 + `Retry-After`** with
+  a UI-friendly message. Best-effort/in-memory (per serverless instance): counters aren't
+  shared across instances and reset on cold starts, so a client spread over N warm
+  instances can get up to N× the limit. Modal adds a coarser per-container cap
+  (`coarse_rate_limit`, keyed on the proxy-forwarded `X-Client-IP`) as defense-in-depth.
+  Upgrade path: swap `lib/ratelimit.js` for Upstash/Redis for durable cross-instance limits.
 - **Upload safety:** validated by **magic bytes** (PNG/JPEG/PDF), 20 MB cap, and
   decompression-bomb guards — PDF page count is checked (`pdfinfo`) *before* rasterizing;
   images are rejected by pixel/dimension caps before decoding (`Image.MAX_IMAGE_PIXELS`).
