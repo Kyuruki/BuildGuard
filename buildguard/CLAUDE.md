@@ -73,7 +73,8 @@ and unauthenticated — see SECURITY_FINDINGS.md; hardening this is a Phase 1 go
 ## The two-stage pipeline (KEEP this design)
 
 **Stage 1 — extraction, no AI** (`extract_line_items`, `backend.py`)
-- Tesseract OCR via `pytesseract` (PDFs rasterized first with `pdf2image` + poppler).
+- Tesseract OCR via `pytesseract` (PDFs rasterized in-memory with **PyMuPDF** — no
+  poppler subprocess or temp files).
 - Regex: codes `\b(\d{5})\b`; money `\$?\s?(\d{1,3}(?:,\d{3})*\.\d{2})`.
 - A line becomes a line item only if it has **both** a 5-digit code **and** a dollar
   amount on the same line (rejects zip/phone/account numbers).
@@ -157,7 +158,8 @@ browser; there are none. `PROXY_SHARED_SECRET` lives only in the serverless prox
   decompression-bomb guards — PDF page count is checked (`pdfinfo`) *before* rasterizing;
   images are rejected by pixel/dimension caps before decoding (`Image.MAX_IMAGE_PIXELS`).
 - **In-memory only:** the proxy buffers the upload in memory (no temp file); the backend
-  never writes bill data to disk or DB. `analyze` no longer echoes OCR text to the client.
+  reads the raw body in memory and rasterizes PDFs in-memory with PyMuPDF (no disk at
+  all). `analyze` no longer echoes OCR text to the client.
 - **Prompt-injection defense:** letter instructions live in the Claude `system` prompt;
   untrusted values go inside a `<bill_data>` fence, sanitized (control chars + `<>`
   stripped, length-capped); the model is told to treat the fence as data only.

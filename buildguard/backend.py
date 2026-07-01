@@ -7,11 +7,9 @@ Two-stage bill-analysis pipeline plus a Claude-powered dispute-letter endpoint.
     Letter (AI):      Claude drafts a dispute letter from *server-verified* overcharges.
 
 Security / privacy invariants (see SECURITY_FINDINGS.md, SECURITY.md):
-  * Nothing derived from a bill is ever *persisted*: no database writes, no files
-    kept beyond the request. The upload is read straight into memory. The one
-    unavoidable transient is PDF rendering — poppler (pdf2image) writes page images
-    to an ephemeral per-container tempdir that is auto-cleaned when the call
-    returns; nothing survives the request. The two CMS tables are read-only.
+  * Nothing derived from a bill ever touches disk: the upload is read straight into
+    memory and PDFs are rasterized in-memory with PyMuPDF (no subprocess, no temp
+    files). No database writes. The two CMS tables are read-only reference data.
   * Uploads are validated by magic bytes and guarded against decompression bombs
     *before* any heavy processing.
   * The Modal endpoints are only meant to be called by the Vercel proxy; a shared
@@ -71,13 +69,12 @@ image = (
         "Pillow==12.2.0",
         "psycopg2-binary==2.9.12",
         "anthropic==0.115.0",
-        "pdf2image==1.17.0",
-        "pypdf==6.14.2",  # read page dimensions to reject raster bombs before rendering
+        "PyMuPDF==1.28.0",  # in-memory PDF rasterization (no poppler subprocess / tempdir)
     )
-    # apt packages are intentionally unpinned: debian_slim is release-pinned and
-    # tesseract-ocr / poppler-utils are trusted distro packages. Reliable apt
-    # version pinning needs a Debian snapshot mirror — over-engineering here.
-    .apt_install("tesseract-ocr", "poppler-utils")
+    # tesseract-ocr is intentionally unpinned: debian_slim is release-pinned and
+    # tesseract is a trusted distro package. Reliable apt version pinning needs a
+    # Debian snapshot mirror — over-engineering here.
+    .apt_install("tesseract-ocr")
 )
 
 app = modal.App("billguard", image=image)
@@ -164,75 +161,51 @@ def ocr_image_bytes(data: bytes) -> str:
         raise HTTPException(status_code=400, detail="Could not read text from the uploaded image.")
 
 
-def guard_pdf_page_sizes(data: bytes) -> None:
-    """Reject a PDF whose pages would rasterize into an oversized bitmap, *before*
-    any rendering happens.
+def ocr_pdf_bytes(data: bytes) -> str:
+    """OCR a PDF fully in memory with PyMuPDF (no subprocess, no temp files).
 
-    poppler renders each page in C and allocates the full bitmap before Pillow can
-    inspect it, so a single page with a huge MediaBox (optionally amplified by
-    /UserUnit) is a decompression-bomb DoS that the image-path pixel guard doesn't
-    cover. We read every page's declared dimensions with pypdf (no rendering) and
-    reject if the projected pixel size at our render DPI exceeds the caps.
+    Enforces the page cap up front, and for each page checks the projected bitmap
+    size against the pixel/dimension caps *before* rasterizing — so neither a
+    many-page nor a single-giant-page PDF is ever fully rendered.
     """
-    from pypdf import PdfReader
-    from pypdf.errors import PdfReadError
+    import fitz  # PyMuPDF
+    import pytesseract
 
     try:
-        reader = PdfReader(io.BytesIO(data))
-        for page in reader.pages:
-            box = page.mediabox
-            try:
-                user_unit = float(page.get("/UserUnit", 1) or 1)
-            except (TypeError, ValueError):
-                user_unit = 1.0
-            px_w = (float(box.width) * user_unit) / 72.0 * PDF_RENDER_DPI
-            px_h = (float(box.height) * user_unit) / 72.0 * PDF_RENDER_DPI
+        doc = fitz.open(stream=data, filetype="pdf")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Could not read the uploaded PDF.")
+
+    try:
+        page_count = doc.page_count
+        if page_count <= 0:
+            raise HTTPException(status_code=400, detail="The uploaded PDF has no readable pages.")
+        if page_count > MAX_PDF_PAGES:
+            raise HTTPException(status_code=400, detail=f"PDF has too many pages. Maximum is {MAX_PDF_PAGES}.")
+
+        text_parts = []
+        for i in range(page_count):
+            page = doc.load_page(i)
+            rect = page.rect
+            px_w = rect.width / 72.0 * PDF_RENDER_DPI
+            px_h = rect.height / 72.0 * PDF_RENDER_DPI
             if px_w > MAX_IMAGE_DIMENSION or px_h > MAX_IMAGE_DIMENSION or (px_w * px_h) > MAX_IMAGE_PIXELS:
                 raise HTTPException(status_code=400, detail="A PDF page is too large to process.")
+
+            pix = page.get_pixmap(dpi=PDF_RENDER_DPI, colorspace=fitz.csRGB, alpha=False)
+            img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+            try:
+                page_text = pytesseract.image_to_string(img)
+            except pytesseract.TesseractError:
+                page_text = ""
+            text_parts.append(f"--- Page {i + 1} ---\n{page_text}")
+        return "\n".join(text_parts)
     except HTTPException:
         raise
-    except (PdfReadError, ValueError, TypeError, KeyError, OSError):
-        raise HTTPException(status_code=400, detail="Could not read the uploaded PDF.")
-
-
-def ocr_pdf_bytes(data: bytes) -> str:
-    """OCR a PDF held in memory.
-
-    Enforces the page cap by reading the page count *before* rasterizing, and
-    rejects oversized pages before rendering, so neither a many-page nor a
-    single-giant-page PDF is ever fully rasterized.
-    """
-    import pytesseract
-    from pdf2image import convert_from_bytes, pdfinfo_from_bytes
-    from pdf2image.exceptions import PDFInfoNotInstalledError, PDFPageCountError, PDFSyntaxError
-
-    try:
-        info = pdfinfo_from_bytes(data)
-        page_count = int(info.get("Pages", 0))
-    except (PDFInfoNotInstalledError, PDFPageCountError, PDFSyntaxError, ValueError):
-        raise HTTPException(status_code=400, detail="Could not read the uploaded PDF.")
-
-    if page_count <= 0:
-        raise HTTPException(status_code=400, detail="The uploaded PDF has no readable pages.")
-    if page_count > MAX_PDF_PAGES:
-        raise HTTPException(status_code=400, detail=f"PDF has too many pages. Maximum is {MAX_PDF_PAGES}.")
-
-    guard_pdf_page_sizes(data)
-
-    try:
-        pages = convert_from_bytes(data, dpi=PDF_RENDER_DPI)
-    except Image.DecompressionBombError:
-        raise HTTPException(status_code=400, detail="PDF page is too large to process.")
     except Exception:
         raise HTTPException(status_code=400, detail="Could not render the uploaded PDF.")
-
-    text_parts = []
-    for i, page_img in enumerate(pages):
-        try:
-            text_parts.append(f"--- Page {i + 1} ---\n{pytesseract.image_to_string(page_img)}")
-        except pytesseract.TesseractError:
-            text_parts.append(f"--- Page {i + 1} ---\n")
-    return "\n".join(text_parts)
+    finally:
+        doc.close()
 
 
 # ---------------------------------------------------------------------------
@@ -456,8 +429,7 @@ async def analyze(request: Request):
     The proxy sends the raw file bytes as the request body (not multipart), so the
     upload is read straight into memory with ``request.body()`` — avoiding
     Starlette's UploadFile, which would spool bills >1 MB to a temp file. The auth
-    check runs before the body is touched. Nothing is persisted (see the module
-    docstring for the one unavoidable transient: poppler's PDF render tempdir).
+    check runs before the body is touched. Nothing touches disk.
     """
     verify_proxy(request)
     request_id = uuid.uuid4().hex[:12]

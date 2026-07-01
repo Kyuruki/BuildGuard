@@ -42,11 +42,13 @@ a single giant-page PDF, plus flipping the trust boundary from fail-open to fail
   field whitelist), L9 (Origin allowlist), L10 (OCR text no longer returned), L13 (pip
   pinned; OSV-clean — apt intentionally unpinned, documented), L14 (dev-only npm advisories),
   L15 (bounded money regex), I1 (security headers via `vercel.json`).
-- **Deferred by design:** L11 (poppler writes a *transient, auto-cleaned* PDF-render
-  tempdir — unavoidable with pdf2image/poppler; now documented honestly rather than
-  claimed away. Optional stricter fix: swap to in-memory PyMuPDF — needs user sign-off as
-  it's a rendering-library change). L12 (third-party Anthropic disclosure → Phase 3
-  Privacy page). The **rate-limiting** half of H2/L8/L9 → Phase 2.
+- **L11 fully resolved:** PDF rendering was switched from pdf2image/poppler to
+  **PyMuPDF** (in-memory, no subprocess, no temp files) per the user's call — the
+  pipeline now touches disk nowhere. (This also removed the pypdf page-size guard,
+  since PyMuPDF exposes page dimensions directly.)
+- **Deferred by design:** L12 (third-party Anthropic disclosure → Phase 3 Privacy
+  page). The **rate-limiting** half of H2/L8/L9 → Phase 2 (best-effort in-memory per
+  the user's call; durability limits documented).
 
 ---
 
