@@ -69,10 +69,16 @@ export default async function handler(req, res) {
         "Content-Type": uploaded.mimetype || "application/octet-stream",
         "x-client-ip": clientIp(req),
       }),
+      // Abort before Vercel's function timeout so a very large/dense PDF returns a
+      // clean error instead of a raw platform 504. (Keep < vercel.json maxDuration.)
+      signal: AbortSignal.timeout(55000),
     });
     const data = await modalResponse.json().catch(() => ({ detail: "Upstream error." }));
     return res.status(modalResponse.status).json(data);
-  } catch {
+  } catch (err) {
+    if (err && (err.name === "TimeoutError" || err.name === "AbortError")) {
+      return res.status(504).json({ detail: "This bill took too long to analyze. Try a smaller or clearer file (fewer pages)." });
+    }
     return res.status(502).json({ detail: "Failed to reach analysis backend." });
   }
 }

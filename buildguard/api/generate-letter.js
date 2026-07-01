@@ -48,10 +48,14 @@ export default async function handler(req, res) {
       method: "POST",
       headers: modalHeaders({ "Content-Type": "application/json", "x-client-ip": clientIp(req) }),
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(28000),
     });
     const data = await modalResponse.json().catch(() => ({ detail: "Upstream error." }));
     return res.status(modalResponse.status).json(data);
-  } catch {
+  } catch (err) {
+    if (err && (err.name === "TimeoutError" || err.name === "AbortError")) {
+      return res.status(504).json({ detail: "The letter took too long to generate. Please try again." });
+    }
     return res.status(502).json({ detail: "Failed to reach letter backend." });
   }
 }

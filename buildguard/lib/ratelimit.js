@@ -18,9 +18,14 @@ function maybePrune(now) {
 }
 
 export function clientIp(req) {
+  // Prefer x-real-ip: Vercel sets it to the true connecting IP and overwrites any
+  // client-supplied value, so it can't be spoofed to farm fresh rate-limit buckets.
+  // Fall back to the first x-forwarded-for entry (Vercel-normalized) only if absent.
+  const real = req.headers["x-real-ip"];
+  if (typeof real === "string" && real.trim()) return real.trim();
   const xff = req.headers["x-forwarded-for"];
   if (typeof xff === "string" && xff.length) return xff.split(",")[0].trim();
-  return req.headers["x-real-ip"] || req.socket?.remoteAddress || "unknown";
+  return req.socket?.remoteAddress || "unknown";
 }
 
 // rules: [{ name, limit, windowMs }]. Denies (without incrementing) if ANY rule

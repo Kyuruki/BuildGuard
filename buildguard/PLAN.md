@@ -104,6 +104,12 @@ blue+white design; process uploads in memory only, persist no PHI.
       + 429 checks happen post-deploy (headers only apply on Vercel, not local preview).
 - [x] `SECURITY.md` written; root `README` + `buildguard/README` updated (setup + deploy);
       `CLAUDE.md` finalized.
+- [x] Final holistic review (requirements/security/prod-readiness + adversarial verify):
+      6 findings fixed — static OG/Twitter in index.html (blank social previews), analyze/
+      letter proxy fetch timeouts (30-page PDF vs 60s → clean 504), $0 CLFS rate → Unverified,
+      404 → noindex + home canonical, rate-limiter prefers x-real-ip, CLAUDE.md raw-bytes doc.
+      (Rate-limiter XFF-spoof + UserUnit findings verified as non-issues — Vercel controls XFF;
+      PyMuPDF page.rect already includes /UserUnit.)
 - [ ] Deploy to Modal + Vercel — **STOP-AND-ASK**: needs the `proxy-auth` Modal secret +
       Vercel `PROXY_SHARED_SECRET` first; deploying is the outward action to confirm.
 - [ ] **CHECKPOINT** ✅ Phase 5.

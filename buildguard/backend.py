@@ -219,6 +219,9 @@ def ocr_pdf_bytes(data: bytes) -> str:
         text_parts = []
         for i in range(page_count):
             page = doc.load_page(i)
+            # page.rect already incorporates the page's /UserUnit (a 612pt page with
+            # /UserUnit 20 reports width 12240), so this projected-pixel check catches
+            # UserUnit-amplified raster bombs before get_pixmap allocates anything.
             rect = page.rect
             px_w = rect.width / 72.0 * PDF_RENDER_DPI
             px_h = rect.height / 72.0 * PDF_RENDER_DPI
@@ -322,6 +325,12 @@ def enrich_with_fee_schedule(line_items: list[dict]) -> list[dict]:
         elif code in clfs_rates:
             medicare_rate, source = clfs_rates[code], "clinical_lab_fee_schedule"
         else:
+            medicare_rate, source = None, None
+
+        # A non-positive reference rate can't anchor an overcharge (e.g. $0.00 CLFS
+        # entries), so treat it as unverified rather than claim an overcharge against a
+        # "$0.00 reference". This also guarantees a valid overcharge_multiple below.
+        if medicare_rate is None or medicare_rate <= 0:
             enriched.append(
                 {
                     **item,
@@ -334,16 +343,14 @@ def enrich_with_fee_schedule(line_items: list[dict]) -> list[dict]:
             )
             continue
 
-        overcharge_amount = round(item["charged"] - medicare_rate, 2)
-        overcharge_multiple = round(item["charged"] / medicare_rate, 2) if medicare_rate > 0 else None
         enriched.append(
             {
                 **item,
                 "found_in_fee_schedule": True,
                 "rate_source": source,
                 "medicare_rate": medicare_rate,
-                "overcharge_amount": overcharge_amount,
-                "overcharge_multiple": overcharge_multiple,
+                "overcharge_amount": round(item["charged"] - medicare_rate, 2),
+                "overcharge_multiple": round(item["charged"] / medicare_rate, 2),
             }
         )
     return enriched

@@ -60,7 +60,7 @@ Browser (React SPA on Vercel)
     │  multipart POST /api/analyze  (field name: "file")
     ▼
 Vercel Serverless Function  buildguard/api/analyze.js
-    │  re-wraps file as multipart, field name "bill"
+    │  forwards the raw file bytes as the request body (application/octet-stream)
     ▼
 Modal FastAPI endpoint  https://kyuruki--billguard-analyze.modal.run
     │  Stage 1 (OCR + regex) -> Stage 2 (DB fee lookup)
@@ -111,7 +111,8 @@ All Modal POST endpoints require the shared-secret header **`X-Proxy-Secret`**
 Enforced only when the secret is configured (fail-open with a warning otherwise).
 
 Modal (workspace `kyuruki`, app `billguard`):
-- `POST https://kyuruki--billguard-analyze.modal.run` — multipart field **`bill`**;
+- `POST https://kyuruki--billguard-analyze.modal.run` — **raw file bytes as the request
+  body** (read with `request.body()`, sniffed by magic bytes);
   returns `{status, request_id, line_items[], line_items_found}`. **No raw OCR `text`
   or `raw_line` is returned** (PHI minimization). Secrets: `neon-db`, `proxy-auth`.
 - `POST https://kyuruki--billguard-generate-letter.modal.run` — JSON body
@@ -123,7 +124,8 @@ Modal (workspace `kyuruki`, app `billguard`):
   (public, no secret).
 
 Vercel proxy (relative paths the SPA calls):
-- `POST /api/analyze` — multipart field **`file`** (formidable) → Modal `bill`.
+- `POST /api/analyze` — multipart field **`file`** (formidable) → forwarded to Modal as
+  raw bytes (application/octet-stream), not multipart.
 - `POST /api/generate-letter` — JSON passthrough.
 
 `line_items` object shape (analyze output / letter input):
@@ -242,9 +244,11 @@ Loaders — **already ran; do not re-run** (they `TRUNCATE`). Kept for provenanc
   ```
   (`%LOCALAPPDATA%` == `C:\Users\karol\AppData\Local`.) Swap `deploy` for `serve`/`run`
   as needed.
-- **Field-name mismatch is load-bearing:** browser sends `file`; the proxy renames
-  it to `bill` for Modal. Changing either side breaks upload (this bit us before —
-  see commits "fixed form field name").
+- **Upload contract:** browser → proxy is multipart field **`file`** (formidable); proxy
+  → Modal is the **raw file bytes** in the request body (Modal reads `request.body()`,
+  no multipart). Changing either side breaks upload. (Historically the proxy re-wrapped
+  as multipart `bill` — see commits "fixed form field name"; Phase 1 switched to raw
+  bytes to avoid Starlette's UploadFile disk-spool.)
 - **`proxy-auth` Modal secret must exist before deploy** (Phase 1) — the decorators
   reference it, so `modal deploy` fails if it's missing. Create it once (see secrets).
 - **`analyze.js` sets `bodyParser: false`** so formidable can read the raw stream and
