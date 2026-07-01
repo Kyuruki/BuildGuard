@@ -1,0 +1,5 @@
+# BillGuard — all crawlers (including AI crawlers) welcome.
+User-agent: *
+Allow: /
+
+Sitemap: https://billguard.kyuruki.cc/sitemap.xml

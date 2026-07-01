@@ -1,16 +1,19 @@
-# React + Vite
+# BillGuard — app
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This folder contains the BillGuard application (frontend, `/api` proxy, and the Modal
+`backend.py`).
 
-Currently, two official plugins are available:
+- **Project overview, setup, and deploy steps:** see the [root README](../README.md).
+- **Developer source-of-truth** (architecture, two-stage pipeline, endpoints, secrets, DB,
+  run/deploy, gotchas): [CLAUDE.md](./CLAUDE.md).
+- **Security model, endpoint contract, rate limits, data handling:** [SECURITY.md](./SECURITY.md).
+- **Working checklist / phase log:** [PLAN.md](./PLAN.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Quick start (from this folder):
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm install
+npm run dev     # frontend dev server
+npm run build   # production build
+npm run lint
+```
